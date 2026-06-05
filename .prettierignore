@@ -1,0 +1,7 @@
+node_modules
+dist
+dist-ssr
+.husky
+package-lock.json
+PLAN.md
+AGENTS.md
