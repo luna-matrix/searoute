@@ -1,0 +1,98 @@
+/*
+ * Admiralty Night — design tokens for SeaRoute.
+ * The only file in the codebase that contains raw color values.
+ * Every other file must reference these via var(--token-name).
+ * See PLAN.md "Visual Design System" for rationale.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* ---------- Colors — Admiralty Night palette ---------- */
+  --color-deep-chart-navy: #060d17; /* Background — like deep ocean at night */
+  --color-chart-table-steel: #0f1e33; /* Panel surfaces — like a metal chart table */
+  --color-wet-ink-blue: #1a3352; /* Elevated panels */
+  --color-admiralty-signal: #1e5fb4; /* Primary accent — like chart markings */
+  --color-starboard-green: #00a86b; /* Origin / safe / recommended */
+  --color-port-red: #e63946; /* Destination / warning */
+  --color-signal-amber: #f77f00; /* Transit ports / alternatives / cape routes */
+  --color-fathom-blue: #004e92; /* Depth contour reference */
+  --color-fog-grey: #8899aa; /* Secondary text */
+  --color-sea-spray: #c8d6e5; /* Primary text */
+  --color-lantern-gold: #ffd166; /* Highlights / badges */
+  --color-arctic-white: #eef2f5; /* Interactive state / focus */
+
+  /* ---------- Surfaces ---------- */
+  --color-glass-panel: rgb(15 30 51 / 85%);
+  --color-elevated-card: rgb(26 51 82 / 92%);
+  --color-border-on-glass: rgb(255 255 255 / 6%);
+  --color-border-on-elevated: rgb(255 255 255 / 10%);
+  --color-chart-grid: rgb(255 255 255 / 2%);
+
+  /* ---------- Typography ---------- */
+  --font-family-ui: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-family-num: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+  --font-size-hero-distance: 3rem; /* 48px */
+  --font-size-heading-1: 1.5rem; /* 24px */
+  --font-size-heading-2: 1.125rem; /* 18px */
+  --font-size-body: 0.9375rem; /* 15px */
+  --font-size-body-small: 0.8125rem; /* 13px */
+  --font-size-caption: 0.6875rem; /* 11px */
+  --font-size-micro: 0.625rem; /* 10px */
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+
+  --letter-spacing-num: -0.02em;
+  --letter-spacing-wide: 0.05em;
+
+  /* ---------- Spacing (4px base) ---------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  /* ---------- Radii ---------- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 9999px;
+
+  /* ---------- Z-index ---------- */
+  --z-map: 0;
+  --z-overlay: 10;
+  --z-controls: 20;
+  --z-search: 30;
+  --z-panel: 40;
+  --z-toast: 50;
+  --z-modal: 60;
+
+  /* ---------- Motion ---------- */
+  --duration-quick: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 600ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---------- Backdrop blur ---------- */
+  --blur-glass: 20px;
+  --blur-elevated: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-quick: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
+}
