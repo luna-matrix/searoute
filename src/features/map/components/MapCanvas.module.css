@@ -53,3 +53,35 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: var(--letter-spacing-num);
 }
+
+.laneTooltip {
+  background-color: var(--color-glass-panel);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--color-border-on-glass);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-body-small);
+  color: var(--color-sea-spray);
+  pointer-events: none;
+  min-width: 160px;
+}
+
+.laneName {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-arctic-white);
+  margin-bottom: 2px;
+}
+
+.laneMeta {
+  color: var(--color-fog-grey);
+  font-size: var(--font-size-caption);
+  text-transform: capitalize;
+}
+
+.laneMetaImportant {
+  color: var(--color-port-red);
+  font-weight: var(--font-weight-medium);
+  text-transform: capitalize;
+}

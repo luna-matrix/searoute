@@ -1,31 +1,41 @@
 import { useMemo, useCallback } from 'react'
 import { DeckGL } from '@deck.gl/react'
 import { TileLayer } from '@deck.gl/geo-layers'
-import { BitmapLayer, ScatterplotLayer } from '@deck.gl/layers'
+import { BitmapLayer, ScatterplotLayer, GeoJsonLayer } from '@deck.gl/layers'
+import type { Feature, Geometry } from 'geojson'
 import { PORTS } from '@/data/ports'
+import { SHIPPING_LANES } from '@/data/shipping-lanes'
+import type { ShippingLaneProperties } from '@/data/shipping-lanes'
 import type { Port } from '@/types/port'
 import { BASEMAPS } from '../lib/basemaps'
 import type { BasemapConfig } from '../lib/basemaps'
 import { getPortFill, getPortRadiusPx } from '../lib/port-styles'
+import { getLaneLineColor, getLaneLineWidth } from '../lib/shipping-lane-styles'
 import styles from './MapCanvas.module.css'
 
 interface MapCanvasProps {
   basemap?: BasemapConfig
 }
 
-/**
- * Initial view state: centered roughly on the densest part of global
- * maritime traffic (Europe / Africa / Middle East / South Asia visible
- * in one frame), zoomed out so the curvature of the globe shows at the
- * edges. Pitch and bearing are 0 for the v1 flat-projection view; the
- * perspective toggle ships in chunk 2.5 and pitch transitions in Phase 6.
- */
 const INITIAL_VIEW_STATE = {
   longitude: 20,
   latitude: 30,
   zoom: 1.5,
   pitch: 0,
   bearing: 0,
+}
+
+function isPort(o: unknown): o is Port {
+  return typeof o === 'object' && o !== null && 'unlocode' in o && 'lat' in o && 'lng' in o
+}
+
+function isLane(o: unknown): o is Feature<Geometry, ShippingLaneProperties> {
+  return typeof o === 'object' && o !== null && 'geometry' in o && 'properties' in o
+}
+
+interface TooltipInfo {
+  object?: unknown
+  layer?: { id?: string } | null
 }
 
 export default function MapCanvas({ basemap = BASEMAPS.dark }: MapCanvasProps) {
@@ -51,6 +61,16 @@ export default function MapCanvas({ basemap = BASEMAPS.dark }: MapCanvasProps) {
           })
         },
       }),
+      new GeoJsonLayer<ShippingLaneProperties>({
+        id: 'shipping-lanes',
+        data: SHIPPING_LANES,
+        stroked: true,
+        filled: false,
+        getLineColor: getLaneLineColor,
+        getLineWidth: getLaneLineWidth,
+        lineWidthUnits: 'pixels',
+        pickable: true,
+      }),
       new ScatterplotLayer<Port>({
         id: 'ports',
         data: PORTS,
@@ -59,7 +79,6 @@ export default function MapCanvas({ basemap = BASEMAPS.dark }: MapCanvasProps) {
         getFillColor: getPortFill,
         radiusUnits: 'pixels',
         pickable: true,
-        // Click handler lands in chunk 2.6 with the selection store.
         onClick: (info) => {
           const port = info.object as Port | undefined
           if (port) {
@@ -71,17 +90,36 @@ export default function MapCanvas({ basemap = BASEMAPS.dark }: MapCanvasProps) {
     [basemap],
   )
 
-  const getTooltip = useCallback(({ object }: { object?: Port }) => {
-    if (!object) return null
-    const port = object
-    const locode = port.unlocode ? `<div class="${styles.tooltipMeta}">${port.unlocode}</div>` : ''
-    return {
-      html: `<div class="${styles.tooltip}">
-        <div class="${styles.tooltipName}">${port.name}</div>
-        <div class="${styles.tooltipCountry}">${port.country}</div>
-        ${locode}
-      </div>`,
+  const getTooltip = useCallback((info: TooltipInfo) => {
+    if (!info.object) return null
+
+    if (info.layer?.id === 'ports' && isPort(info.object)) {
+      const port = info.object
+      const locode = port.unlocode
+        ? `<div class="${styles.tooltipMeta}">${port.unlocode}</div>`
+        : ''
+      return {
+        html: `<div class="${styles.tooltip}">
+            <div class="${styles.tooltipName}">${port.name}</div>
+            <div class="${styles.tooltipCountry}">${port.country}</div>
+            ${locode}
+          </div>`,
+      }
     }
+
+    if (info.layer?.id === 'shipping-lanes' && isLane(info.object)) {
+      const lane = info.object
+      const importanceClass =
+        lane.properties.importance === 'restricted' ? styles.laneMetaImportant : styles.laneMeta
+      return {
+        html: `<div class="${styles.laneTooltip}">
+            <div class="${styles.laneName}">${lane.properties.name}</div>
+            <div class="${importanceClass}">${lane.properties.type} · ${lane.properties.importance}</div>
+          </div>`,
+      }
+    }
+
+    return null
   }, [])
 
   return (
