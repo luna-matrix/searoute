@@ -40,3 +40,17 @@ export function getPortRadiusPx(port: Port): number {
 
 /** Stroke color (subtle ring) — used in chunk 2.6 for selected ports. */
 export const PORT_STROKE: RGBA = [238, 242, 245, 255] // arctic-white
+
+/** Origin / destination marker styling. Larger than the regular port
+ *  dots so they read clearly as "role" markers, with a white ring to
+ *  pop against the dark basemap. The colors mirror the Admiralty
+ *  Night tokens: starboard-green for origin, port-red for destination. */
+export const ORIGIN_FILL: RGBA = [0, 168, 107, 255]
+export const DESTINATION_FILL: RGBA = [230, 57, 70, 255]
+export const ROLE_RING: RGBA = [238, 242, 245, 255] // arctic-white
+export const ROLE_RADIUS_PX = 8
+export const ROLE_RING_WIDTH_PX = 2
+
+export function getRoleFill(role: 'origin' | 'destination'): RGBA {
+  return role === 'origin' ? ORIGIN_FILL : DESTINATION_FILL
+}

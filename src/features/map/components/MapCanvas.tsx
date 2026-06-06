@@ -12,7 +12,14 @@ import type { Port } from '@/types/port'
 import { useMapStore } from '@/store/map'
 import { BASEMAPS } from '../lib/basemaps'
 import type { BasemapId } from '../lib/basemaps'
-import { getPortFill, getPortRadiusPx } from '../lib/port-styles'
+import {
+  getPortFill,
+  getPortRadiusPx,
+  getRoleFill,
+  ROLE_RING,
+  ROLE_RADIUS_PX,
+  ROLE_RING_WIDTH_PX,
+} from '../lib/port-styles'
 import { getLaneLineColor, getLaneLineWidth } from '../lib/shipping-lane-styles'
 import CompassRose from './CompassRose'
 import MapControls from './MapControls'
@@ -46,6 +53,11 @@ interface TooltipInfo {
   layer?: { id?: string } | null
 }
 
+interface RolePort {
+  port: Port
+  role: 'origin' | 'destination'
+}
+
 export default function MapCanvas() {
   const [viewState, setViewState] = useState<MapViewState>(INITIAL_VIEW_STATE)
   const [basemapId, setBasemapId] = useState<BasemapId>('dark')
@@ -69,8 +81,24 @@ export default function MapCanvas() {
     return () => observer.disconnect()
   }, [])
 
-  const selectedPortId = useMapStore((s) => s.selectedPortId)
   const selectPort = useMapStore((s) => s.selectPort)
+  const originId = useMapStore((s) => s.originId)
+  const setOrigin = useMapStore((s) => s.setOrigin)
+  const destinationId = useMapStore((s) => s.destinationId)
+  const setDestination = useMapStore((s) => s.setDestination)
+
+  const rolePorts = useMemo<RolePort[]>(() => {
+    const result: RolePort[] = []
+    if (originId) {
+      const port = PORTS.find((p) => p.id === originId)
+      if (port) result.push({ port, role: 'origin' })
+    }
+    if (destinationId) {
+      const port = PORTS.find((p) => p.id === destinationId)
+      if (port) result.push({ port, role: 'destination' })
+    }
+    return result
+  }, [originId, destinationId])
 
   const layers = useMemo(
     () => [
@@ -115,11 +143,17 @@ export default function MapCanvas() {
         onClick: (info) => {
           const port = info.object as Port | undefined
           if (!port) return
-          if (selectedPortId === port.id) {
-            selectPort(null)
-            return
-          }
+          // Always pulse the clicked port.
           selectPort(port.id)
+          // Set origin first (if empty), then destination (if origin
+          // is set and destination is empty). After both are set,
+          // additional clicks just fly + pulse.
+          if (!originId) {
+            setOrigin(port.id)
+          } else if (originId && !destinationId && originId !== port.id) {
+            setDestination(port.id)
+          }
+          // Always fly to the clicked port.
           setViewState((vs) => ({
             ...vs,
             longitude: port.lng,
@@ -130,8 +164,22 @@ export default function MapCanvas() {
           }))
         },
       }),
+      new ScatterplotLayer<RolePort>({
+        id: 'origin-destination',
+        data: rolePorts,
+        getPosition: (d) => [d.port.lng, d.port.lat],
+        getRadius: ROLE_RADIUS_PX,
+        getFillColor: (d) => getRoleFill(d.role),
+        getLineColor: ROLE_RING,
+        getLineWidth: ROLE_RING_WIDTH_PX,
+        stroked: true,
+        filled: true,
+        radiusUnits: 'pixels',
+        lineWidthUnits: 'pixels',
+        pickable: false,
+      }),
     ],
-    [basemap, selectedPortId, selectPort],
+    [basemap, originId, destinationId, rolePorts, selectPort, setDestination, setOrigin],
   )
 
   const getTooltip = useCallback((info: TooltipInfo) => {
