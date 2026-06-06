@@ -1,0 +1,16 @@
+/* Glass surface utility. See PLAN.md "Surfaces". */
+.glass {
+  background-color: var(--color-glass-panel);
+  backdrop-filter: blur(var(--blur-glass)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(140%);
+  border: 1px solid var(--color-border-on-glass);
+  border-radius: var(--radius-lg);
+}
+
+.glass--elevated {
+  background-color: var(--color-elevated-card);
+  backdrop-filter: blur(var(--blur-elevated)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--blur-elevated)) saturate(140%);
+  border: 1px solid var(--color-border-on-elevated);
+  border-radius: var(--radius-lg);
+}

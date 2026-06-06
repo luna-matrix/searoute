@@ -1,0 +1,32 @@
+body {
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-normal);
+  color: var(--color-sea-spray);
+  background-color: var(--color-deep-chart-navy);
+}
+
+h1 {
+  font-size: var(--font-size-heading-1);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+}
+
+h2 {
+  font-size: var(--font-size-heading-2);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+}
+
+/*
+ * .num — any numeric value.
+ * AGENTS.md: all numeric values (distances, coordinates, time) must use
+ * tabular figures so values can change without layout shift.
+ */
+.num {
+  font-family: var(--font-family-num);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: var(--letter-spacing-num);
+}
