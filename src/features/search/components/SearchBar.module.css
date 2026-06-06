@@ -36,6 +36,46 @@
   margin: 0 var(--space-3);
 }
 
+.swapArea {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1) 0;
+}
+
+.swapButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: 1px solid var(--color-border-on-glass);
+  border-radius: 50%;
+  color: var(--color-fog-grey);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-quick) var(--ease-out),
+    color var(--duration-quick) var(--ease-out),
+    border-color var(--duration-quick) var(--ease-out);
+}
+
+.swapButton:hover:not([disabled]) {
+  background-color: var(--color-wet-ink-blue);
+  border-color: var(--color-admiralty-signal);
+  color: var(--color-arctic-white);
+}
+
+.swapButton:focus-visible {
+  outline: 2px solid var(--color-admiralty-signal);
+  outline-offset: 1px;
+}
+
+.swapButton[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .dot {
   width: 10px;
   height: 10px;

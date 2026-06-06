@@ -21,6 +21,8 @@ interface MapStore {
   setOrigin: (id: string | null) => void
   setDestination: (id: string | null) => void
   setViewingPort: (id: string | null) => void
+  /** Swap origin and destination (atomic). No-op if either is unset. */
+  swapOriginDestination: () => void
 }
 
 export const useMapStore = create<MapStore>((set) => ({
@@ -32,4 +34,9 @@ export const useMapStore = create<MapStore>((set) => ({
   setOrigin: (id) => set({ originId: id }),
   setDestination: (id) => set({ destinationId: id }),
   setViewingPort: (id) => set({ viewingPortId: id }),
+  swapOriginDestination: () =>
+    set((s) => {
+      if (!s.originId || !s.destinationId) return s
+      return { originId: s.destinationId, destinationId: s.originId }
+    }),
 }))

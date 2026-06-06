@@ -5,16 +5,38 @@ import type { Port } from '@/types/port'
 import { useMapStore } from '@/store/map'
 import styles from './SearchBar.module.css'
 
+const SwapIcon = () => (
+  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+    <path
+      d="M5.5 4.5L8 2l2.5 2.5M8 2v6"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+    <path
+      d="M10.5 11.5L8 14l-2.5-2.5M8 14V8"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+  </svg>
+)
+
 /**
  * Floating search bar — top-center, max-width 600px, glass panel.
  *
- * Chunk 3.3:
- * - Keyboard navigation: ↑/↓ move highlight, Enter selects, Esc
- *   closes, Tab moves focus to the other input.
- * - Selecting a result commits to the MapStore (originId /
- *   destinationId) and moves focus to the other input.
- * - Clearing a field (X button) also clears the store.
- * - Highlight resets to 0 whenever the result list changes.
+ * Audit additions (post-Phase 3):
+ * - Swap button in the divider area: reverses origin ↔ destination
+ *   (atomic store swap + local input swap). Disabled until both are
+ *   committed (i.e., the user has actually selected ports, not just
+ *   typed queries).
+ * - Tab closes the current dropdown before the browser moves focus
+ *   to the next field. Without this, the Origin dropdown stayed
+ *   open while the user Tabbed to Destination and started typing.
  */
 export default function SearchBar() {
   const [origin, setOrigin] = useState('')
@@ -26,8 +48,11 @@ export default function SearchBar() {
   const originRef = useRef<HTMLInputElement>(null)
   const destinationRef = useRef<HTMLInputElement>(null)
 
+  const originId = useMapStore((s) => s.originId)
+  const destinationId = useMapStore((s) => s.destinationId)
   const setOriginId = useMapStore((s) => s.setOrigin)
   const setDestinationId = useMapStore((s) => s.setDestination)
+  const swapOriginDestination = useMapStore((s) => s.swapOriginDestination)
   const setViewingPort = useMapStore((s) => s.setViewingPort)
 
   const runSearch = useCallback((q: string) => {
@@ -105,9 +130,16 @@ export default function SearchBar() {
           setActiveField(null)
           setHighlightIndex(0)
         }
+      } else if (e.key === 'Tab') {
+        // Close the current dropdown before the browser moves focus
+        // to the next field. Without this, the Origin dropdown
+        // stayed open while the user Tabbed to Destination.
+        if (results.length > 0) {
+          setResults([])
+          setActiveField(null)
+          setHighlightIndex(0)
+        }
       }
-      // Tab is left to the browser's default behaviour — it moves
-      // focus to the next focusable element naturally.
     },
     [activeField, highlightIndex, onSelect, results],
   )
@@ -136,6 +168,20 @@ export default function SearchBar() {
     setActiveField(null)
     setHighlightIndex(0)
   }, [setDestinationId])
+
+  const canSwap = Boolean(originId && destinationId)
+  const onSwap = useCallback(() => {
+    if (!canSwap) return
+    // Atomic store swap (single set call) keeps origin and
+    // destination in lockstep. The local input values mirror
+    // the same swap.
+    swapOriginDestination()
+    setOrigin(destination)
+    setDestination(origin)
+    setResults([])
+    setActiveField(null)
+    setHighlightIndex(0)
+  }, [canSwap, destination, origin, swapOriginDestination])
 
   return (
     <div className={styles.bar} role="search">
@@ -172,7 +218,18 @@ export default function SearchBar() {
           </button>
         )}
       </div>
-      <div className={styles.divider} />
+      <div className={styles.swapArea}>
+        <button
+          type="button"
+          className={styles.swapButton}
+          onClick={onSwap}
+          disabled={!canSwap}
+          aria-label="Swap origin and destination"
+          title="Swap origin and destination"
+        >
+          <SwapIcon />
+        </button>
+      </div>
       <div className={styles.row}>
         <span className={`${styles.dot} ${styles.dotDestination}`} aria-hidden="true" />
         <input
