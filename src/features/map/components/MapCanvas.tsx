@@ -9,23 +9,23 @@ import { SHIPPING_LANES } from '@/data/shipping-lanes'
 import type { ShippingLaneProperties } from '@/data/shipping-lanes'
 import type { Port } from '@/types/port'
 import { BASEMAPS } from '../lib/basemaps'
-import type { BasemapConfig } from '../lib/basemaps'
+import type { BasemapId } from '../lib/basemaps'
 import { getPortFill, getPortRadiusPx } from '../lib/port-styles'
 import { getLaneLineColor, getLaneLineWidth } from '../lib/shipping-lane-styles'
 import CompassRose from './CompassRose'
+import MapControls from './MapControls'
 import styles from './MapCanvas.module.css'
 
-interface MapCanvasProps {
-  basemap?: BasemapConfig
-}
-
-const INITIAL_VIEW_STATE = {
+const INITIAL_VIEW_STATE: MapViewState = {
   longitude: 20,
   latitude: 30,
   zoom: 1.5,
   pitch: 0,
   bearing: 0,
 }
+
+const PERSPECTIVE_PITCH = 45
+const ZOOM_STEP = 1
 
 function isPort(o: unknown): o is Port {
   return typeof o === 'object' && o !== null && 'unlocode' in o && 'lat' in o && 'lng' in o
@@ -40,8 +40,10 @@ interface TooltipInfo {
   layer?: { id?: string } | null
 }
 
-export default function MapCanvas({ basemap = BASEMAPS.dark }: MapCanvasProps) {
-  const [bearing, setBearing] = useState(INITIAL_VIEW_STATE.bearing)
+export default function MapCanvas() {
+  const [viewState, setViewState] = useState<MapViewState>(INITIAL_VIEW_STATE)
+  const [basemapId, setBasemapId] = useState<BasemapId>('dark')
+  const basemap = BASEMAPS[basemapId]
 
   const layers = useMemo(
     () => [
@@ -126,22 +128,47 @@ export default function MapCanvas({ basemap = BASEMAPS.dark }: MapCanvasProps) {
     return null
   }, [])
 
+  const onZoomIn = useCallback(() => {
+    setViewState((vs) => ({ ...vs, zoom: (vs.zoom ?? 0) + ZOOM_STEP }))
+  }, [])
+  const onZoomOut = useCallback(() => {
+    setViewState((vs) => ({ ...vs, zoom: (vs.zoom ?? 0) - ZOOM_STEP }))
+  }, [])
+  const onToggleStyle = useCallback(() => {
+    setBasemapId((b) => (b === 'dark' ? 'satellite' : 'dark'))
+  }, [])
+  const onToggleView = useCallback(() => {
+    setViewState((vs) => ({
+      ...vs,
+      pitch: (vs.pitch ?? 0) > 0 ? 0 : PERSPECTIVE_PITCH,
+    }))
+  }, [])
+
   return (
     <div className={styles.canvas}>
       <DeckGL
-        initialViewState={INITIAL_VIEW_STATE}
+        viewState={viewState}
         controller={true}
         layers={layers}
         getTooltip={getTooltip}
         onViewStateChange={({ viewState }) => {
           // viewState is MapViewState | TransitionProps. During a
-          // transition it lacks `bearing`; we only update when present.
-          if ('bearing' in viewState) {
-            setBearing((viewState as MapViewState).bearing ?? 0)
+          // transition the transition payload lacks longitude/latitude
+          // keys; only commit when it looks like a real view state.
+          if ('longitude' in viewState && 'latitude' in viewState && 'zoom' in viewState) {
+            setViewState(viewState as MapViewState)
           }
         }}
       />
-      <CompassRose bearing={bearing} />
+      <CompassRose bearing={viewState.bearing ?? 0} />
+      <MapControls
+        onZoomIn={onZoomIn}
+        onZoomOut={onZoomOut}
+        onToggleStyle={onToggleStyle}
+        onToggleView={onToggleView}
+        basemap={basemapId}
+        perspective={(viewState.pitch ?? 0) > 0}
+      />
       <div className={styles.attribution}>{basemap.attribution}</div>
     </div>
   )

@@ -1,0 +1,57 @@
+.controls {
+  position: absolute;
+  /* Sits below the compass (64px tall) with the same --space-4 inset. */
+  top: calc(64px + var(--space-4) * 2);
+  right: var(--space-4);
+  z-index: var(--z-controls);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-glass-panel);
+  backdrop-filter: blur(var(--blur-glass)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(140%);
+  border: 1px solid var(--color-border-on-glass);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgb(0 0 0 / 30%);
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--color-sea-spray);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-quick) var(--ease-out),
+    color var(--duration-quick) var(--ease-out);
+}
+
+.button:hover {
+  background-color: var(--color-wet-ink-blue);
+  color: var(--color-arctic-white);
+}
+
+.button:active {
+  background-color: var(--color-admiralty-signal);
+  color: var(--color-arctic-white);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-admiralty-signal);
+  outline-offset: -2px;
+}
+
+.button + .button {
+  border-top: 1px solid var(--color-border-on-glass);
+}
