@@ -1,5 +1,6 @@
-import { useMemo, useCallback } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { DeckGL } from '@deck.gl/react'
+import type { MapViewState } from '@deck.gl/core'
 import { TileLayer } from '@deck.gl/geo-layers'
 import { BitmapLayer, ScatterplotLayer, GeoJsonLayer } from '@deck.gl/layers'
 import type { Feature, Geometry } from 'geojson'
@@ -11,6 +12,7 @@ import { BASEMAPS } from '../lib/basemaps'
 import type { BasemapConfig } from '../lib/basemaps'
 import { getPortFill, getPortRadiusPx } from '../lib/port-styles'
 import { getLaneLineColor, getLaneLineWidth } from '../lib/shipping-lane-styles'
+import CompassRose from './CompassRose'
 import styles from './MapCanvas.module.css'
 
 interface MapCanvasProps {
@@ -39,6 +41,8 @@ interface TooltipInfo {
 }
 
 export default function MapCanvas({ basemap = BASEMAPS.dark }: MapCanvasProps) {
+  const [bearing, setBearing] = useState(INITIAL_VIEW_STATE.bearing)
+
   const layers = useMemo(
     () => [
       new TileLayer({
@@ -129,7 +133,15 @@ export default function MapCanvas({ basemap = BASEMAPS.dark }: MapCanvasProps) {
         controller={true}
         layers={layers}
         getTooltip={getTooltip}
+        onViewStateChange={({ viewState }) => {
+          // viewState is MapViewState | TransitionProps. During a
+          // transition it lacks `bearing`; we only update when present.
+          if ('bearing' in viewState) {
+            setBearing((viewState as MapViewState).bearing ?? 0)
+          }
+        }}
       />
+      <CompassRose bearing={bearing} />
       <div className={styles.attribution}>{basemap.attribution}</div>
     </div>
   )

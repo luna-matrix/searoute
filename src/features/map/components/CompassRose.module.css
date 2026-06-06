@@ -1,0 +1,27 @@
+.container {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: var(--z-controls);
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-glass-panel);
+  backdrop-filter: blur(var(--blur-glass)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(140%);
+  border: 1px solid var(--color-border-on-glass);
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 2px 12px rgb(0 0 0 / 30%);
+}
+
+.compass {
+  width: 82%;
+  height: 82%;
+  transform-origin: 50% 50%;
+  /* The transition honours prefers-reduced-motion via the duration
+   * tokens (the reduced-motion media query zeroes them out). */
+  transition: transform var(--duration-base) var(--ease-out);
+}
