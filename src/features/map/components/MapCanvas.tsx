@@ -1,6 +1,7 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DeckGL } from '@deck.gl/react'
 import type { MapViewState } from '@deck.gl/core'
+import { FlyToInterpolator } from '@deck.gl/core'
 import { TileLayer } from '@deck.gl/geo-layers'
 import { BitmapLayer, ScatterplotLayer, GeoJsonLayer } from '@deck.gl/layers'
 import type { Feature, Geometry } from 'geojson'
@@ -8,12 +9,14 @@ import { PORTS } from '@/data/ports'
 import { SHIPPING_LANES } from '@/data/shipping-lanes'
 import type { ShippingLaneProperties } from '@/data/shipping-lanes'
 import type { Port } from '@/types/port'
+import { useMapStore } from '@/store/map'
 import { BASEMAPS } from '../lib/basemaps'
 import type { BasemapId } from '../lib/basemaps'
 import { getPortFill, getPortRadiusPx } from '../lib/port-styles'
 import { getLaneLineColor, getLaneLineWidth } from '../lib/shipping-lane-styles'
 import CompassRose from './CompassRose'
 import MapControls from './MapControls'
+import PortMarker from './PortMarker'
 import styles from './MapCanvas.module.css'
 
 const INITIAL_VIEW_STATE: MapViewState = {
@@ -26,6 +29,8 @@ const INITIAL_VIEW_STATE: MapViewState = {
 
 const PERSPECTIVE_PITCH = 45
 const ZOOM_STEP = 1
+const SELECTED_ZOOM = 5
+const FLY_TO_DURATION_MS = 600
 
 function isPort(o: unknown): o is Port {
   return typeof o === 'object' && o !== null && 'unlocode' in o && 'lat' in o && 'lng' in o
@@ -44,6 +49,27 @@ export default function MapCanvas() {
   const [viewState, setViewState] = useState<MapViewState>(INITIAL_VIEW_STATE)
   const [basemapId, setBasemapId] = useState<BasemapId>('dark')
   const basemap = BASEMAPS[basemapId]
+
+  const canvasRef = useRef<HTMLDivElement>(null)
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 })
+
+  useEffect(() => {
+    const el = canvasRef.current
+    if (!el) return
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (!entry) return
+      setCanvasSize({
+        width: entry.contentRect.width,
+        height: entry.contentRect.height,
+      })
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  const selectedPortId = useMapStore((s) => s.selectedPortId)
+  const selectPort = useMapStore((s) => s.selectPort)
 
   const layers = useMemo(
     () => [
@@ -87,13 +113,24 @@ export default function MapCanvas() {
         pickable: true,
         onClick: (info) => {
           const port = info.object as Port | undefined
-          if (port) {
-            console.log('[SeaRoute] port clicked:', port.name, port.id)
+          if (!port) return
+          if (selectedPortId === port.id) {
+            selectPort(null)
+            return
           }
+          selectPort(port.id)
+          setViewState((vs) => ({
+            ...vs,
+            longitude: port.lng,
+            latitude: port.lat,
+            zoom: SELECTED_ZOOM,
+            transitionDuration: FLY_TO_DURATION_MS,
+            transitionInterpolator: new FlyToInterpolator(),
+          }))
         },
       }),
     ],
-    [basemap],
+    [basemap, selectedPortId, selectPort],
   )
 
   const getTooltip = useCallback((info: TooltipInfo) => {
@@ -145,7 +182,7 @@ export default function MapCanvas() {
   }, [])
 
   return (
-    <div className={styles.canvas}>
+    <div ref={canvasRef} className={styles.canvas}>
       <DeckGL
         viewState={viewState}
         controller={true}
@@ -160,6 +197,7 @@ export default function MapCanvas() {
           }
         }}
       />
+      <PortMarker viewState={viewState} width={canvasSize.width} height={canvasSize.height} />
       <CompassRose bearing={viewState.bearing ?? 0} />
       <MapControls
         onZoomIn={onZoomIn}

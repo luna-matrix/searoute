@@ -1,0 +1,46 @@
+.marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: var(--z-overlay);
+  will-change: transform;
+}
+
+.dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--color-starboard-green);
+  border: 2px solid var(--color-arctic-white);
+  box-shadow: 0 0 16px var(--color-starboard-green);
+  position: relative;
+  z-index: 2;
+}
+
+.ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--color-starboard-green);
+  transform: translate(-50%, -50%);
+  animation: portPulse 1.5s var(--ease-out) infinite;
+  z-index: 1;
+}
+
+.ring:nth-child(3) {
+  animation-delay: 0.75s;
+}
+
+@keyframes portPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3.5);
+    opacity: 0;
+  }
+}
