@@ -26,6 +26,7 @@ import MapControls from './MapControls'
 import PortMarker from './PortMarker'
 import SearchBar from '@/features/search/components/SearchBar'
 import PortDetailSheet from '@/features/port-detail/components/PortDetailSheet'
+import PortDetailPopover from '@/features/port-detail/components/PortDetailPopover'
 import styles from './MapCanvas.module.css'
 
 const INITIAL_VIEW_STATE: MapViewState = {
@@ -41,10 +42,6 @@ const ZOOM_STEP = 1
 const SELECTED_ZOOM = 5
 const FLY_TO_DURATION_MS = 600
 
-function isPort(o: unknown): o is Port {
-  return typeof o === 'object' && o !== null && 'unlocode' in o && 'lat' in o && 'lng' in o
-}
-
 function isLane(o: unknown): o is Feature<Geometry, ShippingLaneProperties> {
   return typeof o === 'object' && o !== null && 'geometry' in o && 'properties' in o
 }
@@ -59,10 +56,17 @@ interface RolePort {
   role: 'origin' | 'destination'
 }
 
+interface HoverState {
+  port: Port
+  x: number
+  y: number
+}
+
 export default function MapCanvas() {
   const [viewState, setViewState] = useState<MapViewState>(INITIAL_VIEW_STATE)
   const [basemapId, setBasemapId] = useState<BasemapId>('dark')
   const basemap = BASEMAPS[basemapId]
+  const [hover, setHover] = useState<HoverState | null>(null)
 
   const canvasRef = useRef<HTMLDivElement>(null)
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 })
@@ -87,6 +91,7 @@ export default function MapCanvas() {
   const setOrigin = useMapStore((s) => s.setOrigin)
   const destinationId = useMapStore((s) => s.destinationId)
   const setDestination = useMapStore((s) => s.setDestination)
+  const setViewingPort = useMapStore((s) => s.setViewingPort)
 
   const rolePorts = useMemo<RolePort[]>(() => {
     const result: RolePort[] = []
@@ -132,6 +137,7 @@ export default function MapCanvas() {
         getLineWidth: getLaneLineWidth,
         lineWidthUnits: 'pixels',
         pickable: true,
+        onHover: () => setHover(null),
       }),
       new ScatterplotLayer<Port>({
         id: 'ports',
@@ -144,17 +150,12 @@ export default function MapCanvas() {
         onClick: (info) => {
           const port = info.object as Port | undefined
           if (!port) return
-          // Always pulse the clicked port.
           selectPort(port.id)
-          // Set origin first (if empty), then destination (if origin
-          // is set and destination is empty). After both are set,
-          // additional clicks just fly + pulse.
           if (!originId) {
             setOrigin(port.id)
           } else if (originId && !destinationId && originId !== port.id) {
             setDestination(port.id)
           }
-          // Always fly to the clicked port.
           setViewState((vs) => ({
             ...vs,
             longitude: port.lng,
@@ -163,6 +164,14 @@ export default function MapCanvas() {
             transitionDuration: FLY_TO_DURATION_MS,
             transitionInterpolator: new FlyToInterpolator(),
           }))
+        },
+        onHover: (info) => {
+          const port = info.object as Port | undefined
+          if (port) {
+            setHover({ port, x: info.x, y: info.y })
+          } else {
+            setHover(null)
+          }
         },
       }),
       new ScatterplotLayer<RolePort>({
@@ -183,23 +192,10 @@ export default function MapCanvas() {
     [basemap, originId, destinationId, rolePorts, selectPort, setDestination, setOrigin],
   )
 
+  // Lane tooltip stays in deck.gl's getTooltip; port hover is now
+  // a React popover (richer than the deck.gl html tooltip).
   const getTooltip = useCallback((info: TooltipInfo) => {
     if (!info.object) return null
-
-    if (info.layer?.id === 'ports' && isPort(info.object)) {
-      const port = info.object
-      const locode = port.unlocode
-        ? `<div class="${styles.tooltipMeta}">${port.unlocode}</div>`
-        : ''
-      return {
-        html: `<div class="${styles.tooltip}">
-            <div class="${styles.tooltipName}">${port.name}</div>
-            <div class="${styles.tooltipCountry}">${port.country}</div>
-            ${locode}
-          </div>`,
-      }
-    }
-
     if (info.layer?.id === 'shipping-lanes' && isLane(info.object)) {
       const lane = info.object
       const importanceClass =
@@ -211,7 +207,6 @@ export default function MapCanvas() {
           </div>`,
       }
     }
-
     return null
   }, [])
 
@@ -230,6 +225,28 @@ export default function MapCanvas() {
       pitch: (vs.pitch ?? 0) > 0 ? 0 : PERSPECTIVE_PITCH,
     }))
   }, [])
+
+  const onPopoverSetOrigin = useCallback(
+    (port: Port) => {
+      setOrigin(port.id)
+      setHover(null)
+    },
+    [setOrigin],
+  )
+  const onPopoverSetDestination = useCallback(
+    (port: Port) => {
+      setDestination(port.id)
+      setHover(null)
+    },
+    [setDestination],
+  )
+  const onPopoverViewDetails = useCallback(
+    (port: Port) => {
+      setViewingPort(port.id)
+      setHover(null)
+    },
+    [setViewingPort],
+  )
 
   return (
     <div ref={canvasRef} className={styles.canvas}>
@@ -257,6 +274,20 @@ export default function MapCanvas() {
         basemap={basemapId}
         perspective={(viewState.pitch ?? 0) > 0}
       />
+      {hover && (
+        <PortDetailPopover
+          port={hover.port}
+          screenX={hover.x}
+          screenY={hover.y}
+          canvasWidth={canvasSize.width}
+          canvasHeight={canvasSize.height}
+          isOrigin={hover.port.id === originId}
+          isDestination={hover.port.id === destinationId}
+          onSetOrigin={onPopoverSetOrigin}
+          onSetDestination={onPopoverSetDestination}
+          onViewDetails={onPopoverViewDetails}
+        />
+      )}
       <PortMarker viewState={viewState} width={canvasSize.width} height={canvasSize.height} />
       <PortDetailSheet />
       <div className={styles.attribution}>{basemap.attribution}</div>
