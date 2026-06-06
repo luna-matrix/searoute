@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> **Status: Phases 1–3 complete.** Vite + React 19 + TS scaffold, ESLint + Prettier + Husky pre-commit, deck.gl + searoute-ts + zustand with the searoute-ts code-split, 328-port dataset, 22 shipping lanes with a structural validator, Admiralty Night design tokens, the dark + satellite globe, the SearchBar with fuzzy search + keyboard nav, the PortDetailSheet + PortDetailPopover, and the origin/destination flow with click-to-set. Dev server: `npm run dev` → http://localhost:5173.
+> **Status: Phases 1–4 complete.** Vite + React 19 + TS scaffold, ESLint + Prettier + Husky pre-commit, deck.gl + searoute-ts + zustand with the searoute-ts code-split, 328-port dataset, 22 shipping lanes with a structural validator, Admiralty Night design tokens, the dark + satellite globe, the SearchBar with fuzzy search + keyboard nav, the PortDetailSheet + PortDetailPopover, the origin/destination flow with click-to-set, and the route intelligence: searoute-ts auto-compute when both endpoints are set, PathLayer for the route, transit-port detection (50 nm haversine), RoutePanel with HeroDistance count-up + SailingTime + snap-point speed slider + VoyageTimeline + alternatives switcher. Dev server: `npm run dev` → http://localhost:5173.
 
 ## Source of truth
 
@@ -43,9 +43,9 @@ If a task seems to need a router, a different state lib, a different map library
 - Port search < 100ms; route compute < 1s; transit-port detection < 500ms
 - 60 FPS on Apple Silicon, 30+ FPS on mobile
 - Initial bundle < 1 MB; total < 4 MB
-- The `searoute-ts` maritime network is the most likely budget violator — code-split it (dynamic import on first route compute, not on app boot). Verified in chunk 1.3: when reachable, the lazy chunk is 165 KB gzip; the initial bundle stays at ~60 KB gzip without it.
+- The `searoute-ts` maritime network is the most likely budget violator — code-split it (dynamic import on first route compute, not on app boot). `vite.config.ts` uses `manualChunks` to force a separate lazy `searoute` chunk; the dynamic-import boundary in `src/lib/searoute.ts` is the intended mechanism, but Vite's default inlines small dynamic imports so the manualChunks config is required to keep `searoute-ts` out of the initial bundle.
 - Tiles are fetched at runtime, not bundled, so tile failure is a real error mode (`PLAN.md:461`) — the basemap layer should degrade gracefully. (Fallback UI is Phase 8 polish.)
-- Current build (Phase 3): 306 KB gzip initial JS, 4.6 KB gzip initial CSS, ~250 KB woff2 (Latin + Latin-Extended fonts). Well under the 1 MB initial budget. Vite's 500 KB raw-chunk warning is informational — addressed in Phase 8.
+- Current build (Phase 4): 311 KB gzip initial JS, 4.6 KB gzip initial CSS, ~250 KB woff2 (Latin + Latin-Extended fonts), 168 KB gzip lazy searoute chunk. Initial well under the 1 MB budget. Vite's 500 KB raw-chunk warning is informational — addressed in Phase 8.
 
 ## Phasing
 
@@ -60,11 +60,11 @@ Also design for **routing failure** from day one: `searoute-ts` can fail to find
 | 1 Foundation | ✅ done | scaffold, lint, locked deps, design tokens, port dataset, shipping lanes |
 | 2 The Globe | ✅ done | MapCanvas, basemaps, ports + lanes layers, CompassRose, MapControls, flyTo + pulse |
 | 3 Search & Explore | ✅ done | SearchBar, fuzzy search, keyboard nav, origin/destination markers, PortDetailSheet, PortDetailPopover |
-| 4 Route Intelligence | 🔜 next | searoute-ts integration, PathLayer, transit detection, HeroDistance, VoyageTimeline, SailingTime, RoutePanel |
-| 5 Multi-leg & Fallback | pending | waypoints, seaRouteMulti, snap-failure UI, smart destination suggestions |
-| 6 Interaction Polish | pending | micro-interactions M1–M14, route trace animation, transit bloom, speed snap points, tile cross-fade, toasts, a11y pass |
+| 4 Route Intelligence | ✅ done | searoute-ts auto-compute, PathLayer, transit detection (50 nm haversine), RoutePanel with HeroDistance count-up, SailingTime, snap-point speed slider, VoyageTimeline, alternatives switcher |
+| 5 Multi-leg & Fallback | 🔜 next | waypoints, seaRouteMulti, snap-failure UI, smart destination suggestions |
+| 6 Interaction Polish | pending | micro-interactions M1–M14, route trace animation, transit bloom, tile cross-fade, toasts, a11y pass |
 | 7 Responsive & Touch | pending | breakpoints, mobile bottom sheet, gestures, touch targets, orientation, CSS containment |
-| 8 Polish & Ship | pending | loading/empty/error states, reduced-motion, bundle optimization, Lighthouse, deploy |
+| 8 Polish & Ship | pending | loading/empty/error states, bundle optimization, Lighthouse, deploy |
 
 ## Persistence
 
