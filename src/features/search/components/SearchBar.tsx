@@ -1,27 +1,41 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { searchPorts } from '../lib/port-search'
 import type { PortSearchResult } from '../lib/port-search'
 import type { Port } from '@/types/port'
+import { useMapStore } from '@/store/map'
 import styles from './SearchBar.module.css'
 
 /**
  * Floating search bar — top-center, max-width 600px, glass panel.
  *
- * Chunk 3.2: live fuzzy search with a results dropdown below the
- * active input. fuzzysort powers the ranking; matched characters
- * are highlighted in the result rows. Selection (Enter / click)
- * just logs the port for now — chunk 3.3 wires keyboard nav and
- * the store; chunk 3.4 wires origin/destination.
+ * Chunk 3.3:
+ * - Keyboard navigation: ↑/↓ move highlight, Enter selects, Esc
+ *   closes, Tab moves focus to the other input.
+ * - Selecting a result commits to the MapStore (originId /
+ *   destinationId) and moves focus to the other input.
+ * - Clearing a field (X button) also clears the store.
+ * - Highlight resets to 0 whenever the result list changes.
  */
 export default function SearchBar() {
   const [origin, setOrigin] = useState('')
   const [destination, setDestination] = useState('')
   const [activeField, setActiveField] = useState<'origin' | 'destination' | null>(null)
   const [results, setResults] = useState<PortSearchResult[]>([])
+  const [highlightIndex, setHighlightIndex] = useState(0)
+
+  const originRef = useRef<HTMLInputElement>(null)
+  const destinationRef = useRef<HTMLInputElement>(null)
+
+  const setOriginId = useMapStore((s) => s.setOrigin)
+  const setDestinationId = useMapStore((s) => s.setDestination)
 
   const runSearch = useCallback((q: string) => {
     setResults(searchPorts(q))
   }, [])
+
+  useEffect(() => {
+    setHighlightIndex(0)
+  }, [results])
 
   const onOriginChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,43 +59,89 @@ export default function SearchBar() {
 
   const onSelect = useCallback(
     (port: Port) => {
-      // Chunk 3.3 will commit to the store + fly to the port.
-      // For 3.2 we just fill the input and close the dropdown.
       if (activeField === 'origin') {
         setOrigin(port.name)
+        setOriginId(port.id)
+        setActiveField(null)
+        setResults([])
+        setHighlightIndex(0)
+        // Apple Maps pattern: focus moves to the next field.
+        destinationRef.current?.focus()
       } else if (activeField === 'destination') {
         setDestination(port.name)
+        setDestinationId(port.id)
+        setActiveField(null)
+        setResults([])
+        setHighlightIndex(0)
+        // Closing the dropdown after destination select keeps focus
+        // on the destination field for refinement.
       }
-      setResults([])
-      setActiveField(null)
     },
-    [activeField],
+    [activeField, setOriginId, setDestinationId],
+  )
+
+  const onKeyDown = useCallback(
+    (field: 'origin' | 'destination') => (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        if (results.length === 0) return
+        setHighlightIndex((i) => Math.min(i + 1, results.length - 1))
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        if (results.length === 0) return
+        setHighlightIndex((i) => Math.max(i - 1, 0))
+      } else if (e.key === 'Enter') {
+        if (activeField !== field) return
+        const r = results[highlightIndex]
+        if (r) {
+          e.preventDefault()
+          onSelect(r.port)
+        }
+      } else if (e.key === 'Escape') {
+        if (results.length > 0 || activeField === field) {
+          e.preventDefault()
+          setResults([])
+          setActiveField(null)
+          setHighlightIndex(0)
+        }
+      }
+      // Tab is left to the browser's default behaviour — it moves
+      // focus to the next focusable element naturally.
+    },
+    [activeField, highlightIndex, onSelect, results],
   )
 
   const onFocus = useCallback(
     (field: 'origin' | 'destination') => () => {
       setActiveField(field)
-      runSearch(field === 'origin' ? origin : destination)
+      const q = field === 'origin' ? origin : destination
+      if (q) runSearch(q)
     },
     [origin, destination, runSearch],
   )
 
   const onClearOrigin = useCallback(() => {
     setOrigin('')
+    setOriginId(null)
     setResults([])
     setActiveField(null)
-  }, [])
+    setHighlightIndex(0)
+  }, [setOriginId])
+
   const onClearDestination = useCallback(() => {
     setDestination('')
+    setDestinationId(null)
     setResults([])
     setActiveField(null)
-  }, [])
+    setHighlightIndex(0)
+  }, [setDestinationId])
 
   return (
     <div className={styles.bar} role="search">
       <div className={styles.row}>
         <span className={`${styles.dot} ${styles.dotOrigin}`} aria-hidden="true" />
         <input
+          ref={originRef}
           type="text"
           className={styles.input}
           placeholder="Origin port"
@@ -90,6 +150,7 @@ export default function SearchBar() {
           aria-expanded={activeField === 'origin' && results.length > 0}
           value={origin}
           onChange={onOriginChange}
+          onKeyDown={onKeyDown('origin')}
           onFocus={onFocus('origin')}
         />
         {origin && (
@@ -114,6 +175,7 @@ export default function SearchBar() {
       <div className={styles.row}>
         <span className={`${styles.dot} ${styles.dotDestination}`} aria-hidden="true" />
         <input
+          ref={destinationRef}
           type="text"
           className={styles.input}
           placeholder="Destination port"
@@ -122,6 +184,7 @@ export default function SearchBar() {
           aria-expanded={activeField === 'destination' && results.length > 0}
           value={destination}
           onChange={onDestinationChange}
+          onKeyDown={onKeyDown('destination')}
           onFocus={onFocus('destination')}
         />
         {destination && (
@@ -145,18 +208,19 @@ export default function SearchBar() {
 
       {activeField && results.length > 0 && (
         <div className={styles.dropdown} role="listbox">
-          {results.map((r) => (
+          {results.map((r, i) => (
             <div
               key={r.port.id}
               role="option"
-              aria-selected="false"
-              className={styles.result}
+              aria-selected={i === highlightIndex}
+              className={`${styles.result} ${i === highlightIndex ? styles.resultHighlighted : ''}`}
               // mousedown (not click) so the input doesn't lose focus
               // before the selection commits.
               onMouseDown={(e) => {
                 e.preventDefault()
                 onSelect(r.port)
               }}
+              onMouseEnter={() => setHighlightIndex(i)}
             >
               <div className={styles.resultMain}>
                 <span

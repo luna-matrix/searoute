@@ -135,7 +135,8 @@
 }
 
 .result:hover,
-.result:focus {
+.result:focus,
+.resultHighlighted {
   background-color: var(--color-wet-ink-blue);
 }
 
