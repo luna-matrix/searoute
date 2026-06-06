@@ -1,0 +1,405 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Suez Canal", "type": "canal", "importance": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [32.301, 31.265],
+          [32.334, 31.213],
+          [32.373, 31.13],
+          [32.412, 31.04],
+          [32.45, 30.96],
+          [32.486, 30.876],
+          [32.516, 30.781],
+          [32.546, 30.677],
+          [32.55, 30.55],
+          [32.555, 30.408],
+          [32.562, 30.28],
+          [32.566, 30.155],
+          [32.567, 30.04],
+          [32.564, 29.92],
+          [32.554, 29.97]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Panama Canal", "type": "canal", "importance": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-79.92, 9.35],
+          [-79.923, 9.315],
+          [-79.928, 9.275],
+          [-79.93, 9.235],
+          [-79.93, 9.195],
+          [-79.928, 9.155],
+          [-79.918, 9.12],
+          [-79.9, 9.085],
+          [-79.872, 9.05],
+          [-79.82, 9.02],
+          [-79.74, 9.0],
+          [-79.65, 8.99],
+          [-79.6, 8.98],
+          [-79.567, 8.97]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Strait of Malacca", "type": "strait", "importance": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [95.25, 5.85],
+          [95.7, 5.55],
+          [96.2, 5.3],
+          [96.8, 4.9],
+          [97.5, 4.5],
+          [98.2, 4.0],
+          [98.8, 3.7],
+          [99.5, 3.4],
+          [100.1, 3.1],
+          [100.7, 2.7],
+          [101.3, 2.4],
+          [101.9, 2.1],
+          [102.5, 1.8],
+          [103.1, 1.6],
+          [103.5, 1.4]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Strait of Gibraltar", "type": "strait", "importance": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-5.65, 35.99],
+          [-5.45, 35.97],
+          [-5.32, 35.95],
+          [-5.3, 35.92],
+          [-5.5, 35.9],
+          [-5.75, 35.88]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cape of Good Hope Route",
+        "type": "ocean_route",
+        "importance": "alternative"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [8.0, -10.0],
+          [10.0, -20.0],
+          [11.5, -25.0],
+          [12.5, -28.0],
+          [14.0, -30.0],
+          [16.5, -33.0],
+          [18.5, -34.4],
+          [20.5, -34.5],
+          [24.0, -34.0],
+          [27.0, -33.5],
+          [30.0, -31.0]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "English Channel", "type": "strait", "importance": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-5.5, 48.5],
+          [-4.5, 49.0],
+          [-3.0, 49.5],
+          [-1.5, 50.0],
+          [-0.5, 50.5],
+          [0.5, 50.7],
+          [1.2, 50.85],
+          [1.5, 51.0]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Strait of Hormuz", "type": "strait", "importance": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [56.45, 26.6],
+          [56.5, 26.3],
+          [56.55, 26.0],
+          [56.55, 25.6],
+          [56.55, 25.2],
+          [56.55, 24.7]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Bab-el-Mandeb", "type": "strait", "importance": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [43.25, 12.7],
+          [43.32, 12.65],
+          [43.4, 12.6],
+          [43.5, 12.55],
+          [43.6, 12.5]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Bosporus", "type": "strait", "importance": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [29.1, 41.32],
+          [29.08, 41.25],
+          [29.05, 41.18],
+          [29.04, 41.1],
+          [29.02, 41.02],
+          [29.0, 40.95],
+          [28.98, 40.88]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Danish Straits", "type": "strait", "importance": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [10.5, 57.5],
+          [10.85, 57.0],
+          [11.0, 56.5],
+          [10.85, 56.0],
+          [11.0, 55.7],
+          [11.7, 55.5],
+          [12.55, 55.6]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Singapore Strait", "type": "strait", "importance": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [103.4, 1.15],
+          [103.65, 1.2],
+          [103.9, 1.25],
+          [104.15, 1.27],
+          [104.4, 1.3]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Strait of Magellan",
+        "type": "passage",
+        "importance": "alternative"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-70.9, -52.5],
+          [-71.1, -53.0],
+          [-71.5, -53.5],
+          [-72.5, -53.0],
+          [-73.5, -52.7],
+          [-74.5, -52.5],
+          [-75.4, -52.5]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Drake Passage (Cape Horn)",
+        "type": "ocean_route",
+        "importance": "alternative"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-55.0, -50.0],
+          [-58.0, -54.0],
+          [-62.0, -56.5],
+          [-65.0, -58.0],
+          [-67.0, -58.5],
+          [-70.0, -57.0],
+          [-75.0, -55.0]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Northeast Passage",
+        "type": "ocean_route",
+        "importance": "restricted"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [33.0, 69.0],
+          [50.0, 70.0],
+          [60.0, 73.0],
+          [80.0, 75.0],
+          [105.0, 77.0],
+          [130.0, 73.0],
+          [150.0, 72.0],
+          [170.0, 70.0],
+          [-170.0, 66.5]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Northwest Passage",
+        "type": "ocean_route",
+        "importance": "restricted"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-168.0, 65.5],
+          [-155.0, 70.0],
+          [-130.0, 72.0],
+          [-110.0, 73.5],
+          [-90.0, 73.0],
+          [-75.0, 72.0],
+          [-65.0, 70.0],
+          [-58.0, 65.0],
+          [-50.0, 60.0]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Lombok Strait", "type": "strait", "importance": "alternative" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [114.5, -8.0],
+          [115.5, -8.4],
+          [116.0, -8.5],
+          [116.7, -8.6]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Makassar Strait", "type": "strait", "importance": "alternative" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [117.5, -1.2],
+          [117.8, -2.0],
+          [118.0, -3.0],
+          [118.2, -4.0],
+          [118.5, -5.0]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Sunda Strait", "type": "strait", "importance": "alternative" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [105.4, -5.85],
+          [105.7, -6.1],
+          [106.0, -6.4],
+          [106.4, -6.7]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Strait of Taiwan", "type": "strait", "importance": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [120.0, 24.5],
+          [120.5, 24.0],
+          [121.0, 23.5],
+          [121.5, 23.0],
+          [122.0, 22.5]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Tsugaru Strait", "type": "strait", "importance": "primary" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [140.7, 41.5],
+          [140.9, 41.6],
+          [141.0, 41.7],
+          [141.2, 41.5],
+          [141.4, 41.3]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Suez Approach (Mediterranean)",
+        "type": "approach",
+        "importance": "primary"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [32.0, 33.0],
+          [32.1, 32.5],
+          [32.2, 32.0],
+          [32.25, 31.5],
+          [32.301, 31.265]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Suez Approach (Red Sea)",
+        "type": "approach",
+        "importance": "primary"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [32.554, 29.97],
+          [32.6, 29.5],
+          [32.8, 29.0],
+          [33.2, 28.0],
+          [34.0, 26.5],
+          [35.0, 24.5],
+          [36.0, 22.0],
+          [37.0, 20.0],
+          [38.0, 18.0],
+          [38.5, 16.0],
+          [39.0, 14.0],
+          [40.0, 13.0],
+          [41.5, 12.5],
+          [43.0, 12.6],
+          [43.25, 12.7]
+        ]
+      }
+    }
+  ]
+}

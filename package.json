@@ -13,6 +13,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "validate:data": "tsx src/data/validate-shipping-lanes.ts",
     "prepare": "husky"
   },
   "dependencies": {
@@ -39,6 +40,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^15.5.2",
     "prettier": "^3.8.3",
+    "tsx": "^4.19.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.60.1",
     "vite": "^5.4.11"

@@ -24,6 +24,12 @@ The current `src/data/ports.ts` is a hand-curated seed covering the world's majo
 
 A future version will regenerate this file from the WPI + UN/LOCODE primary sources so the dataset can grow to cover the full 1,200+ port target from `PLAN.md`.
 
+## Shipping lanes GeoJSON
+
+The shipping lane data in `src/data/shipping-lanes.json` is a hand-curated set of the world's major maritime passages (canals, straits, capes, ocean routes, and approaches). Coordinates are approximate and intended for visual reference only — the actual route computation comes from `searoute-ts` against the Eurostat maritime network (see `src/lib/searoute.ts`), not these ghost lines.
+
+`npm run validate:data` runs a structural validator against the JSON to catch malformed entries.
+
 ## License of derived work
 
 This curated dataset is released under CC0 1.0 (public domain dedication) so the SeaRoute application can bundle and ship it without redistribution concerns.
