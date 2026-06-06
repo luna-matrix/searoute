@@ -97,3 +97,85 @@
   color: var(--color-arctic-white);
   font-weight: var(--font-weight-semibold);
 }
+
+.alternatives {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
+  /* Hide scrollbar for the horizontal row but keep it scrollable */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-chart-table-steel) transparent;
+}
+
+.alternatives::-webkit-scrollbar {
+  height: 4px;
+}
+
+.alternatives::-webkit-scrollbar-thumb {
+  background-color: var(--color-chart-table-steel);
+  border-radius: 2px;
+}
+
+.alternativeCard {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-3);
+  background-color: rgb(0 0 0 / 30%);
+  border: 1px solid var(--color-border-on-glass);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  min-width: 150px;
+  max-width: 200px;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  transition:
+    background-color var(--duration-quick) var(--ease-out),
+    border-color var(--duration-quick) var(--ease-out);
+}
+
+.alternativeCard:hover:not(:disabled) {
+  background-color: var(--color-wet-ink-blue);
+  border-color: var(--color-border-on-elevated);
+}
+
+.alternativeCard:focus-visible {
+  outline: 2px solid var(--color-admiralty-signal);
+  outline-offset: 1px;
+}
+
+.alternativeCardActive {
+  background-color: var(--color-wet-ink-blue);
+  border-color: var(--color-admiralty-signal);
+  box-shadow: 0 0 0 1px var(--color-admiralty-signal);
+}
+
+.alternativeVariant {
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-caption);
+  color: var(--color-sea-spray);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alternativeDistance {
+  font-family: var(--font-family-num);
+  font-size: var(--font-size-caption);
+  color: var(--color-fog-grey);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--letter-spacing-num);
+}
+
+.alternativeCardActive .alternativeDistance {
+  color: var(--color-sea-spray);
+}
+
+.alternativeCheck {
+  display: inline-block;
+  margin-right: var(--space-1);
+  color: var(--color-arctic-white);
+}

@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMapStore } from '@/store/map'
 import { PORTS } from '@/data/ports'
+import { detectTransitPorts } from '@/features/map/lib/transit-detection'
 import VoyageTimeline from './VoyageTimeline'
 import styles from './RoutePanel.module.css'
 
@@ -58,7 +59,6 @@ function useCountUp(target: number, durationMs = 800): number {
     const tick = (now: number) => {
       const elapsed = now - startTime
       const t = Math.min(elapsed / durationMs, 1)
-      // ease-out cubic — fast start, gentle landing
       const eased = 1 - Math.pow(1 - t, 3)
       const value = from + (to - from) * eased
       setDisplay(value)
@@ -87,23 +87,33 @@ function useCountUp(target: number, durationMs = 800): number {
  * - Hidden when there's no route, no in-flight compute, and no
  *   error. Slide-up transition is honoured automatically via
  *   the duration-slow token (zeroed under prefers-reduced-motion).
+ * - Alternatives row at the top: one card per seaRouteAlternatives
+ *   option (e.g., 'Suez Canal', 'Cape of Good Hope'). Click to
+ *   switch — the active card gets a brighter border; the path
+ *   layer and the VoyageTimeline both re-derive from the new
+ *   selected route.
  * - Loading: spinner + "Computing route…"
  * - Error: human-readable message (NoRouteError / SnapFailedError
  *   / generic — all mapped to strings in MapCanvas's
  *   auto-compute effect).
  * - Success: route header (origin → destination), then the
- *   HeroDistance (animated count-up to the route length in
- *   nautical miles), then the SailingTime at the user-chosen
- *   vessel speed (default 19 knots, snap points at
- *   12/15/19/22/25 per PLAN.md). Speed slider live-recomputes
- *   the SailingTime as the user drags.
+ *   HeroDistance (animated count-up), then the SailingTime at
+ *   the user-chosen vessel speed (default 19 knots, snap points
+ *   at 12/15/19/22/25 per PLAN.md). Speed slider live-recomputes
+ *   the SailingTime as the user drags. VoyageTimeline at the
+ *   bottom.
  */
 export default function RoutePanel() {
   const route = useMapStore((s) => s.route)
+  const alternatives = useMapStore((s) => s.alternatives)
+  const selectedAlternativeIndex = useMapStore((s) => s.selectedAlternativeIndex)
   const isComputing = useMapStore((s) => s.isComputing)
   const error = useMapStore((s) => s.error)
   const originId = useMapStore((s) => s.originId)
   const destinationId = useMapStore((s) => s.destinationId)
+  const setRoute = useMapStore((s) => s.setRoute)
+  const setSelectedAlternativeIndex = useMapStore((s) => s.setSelectedAlternativeIndex)
+  const setTransitPorts = useMapStore((s) => s.setTransitPorts)
 
   const [speed, setSpeed] = useState<number>(DEFAULT_SPEED_KNOTS)
 
@@ -114,6 +124,18 @@ export default function RoutePanel() {
   const distanceNm = route?.properties.length ?? 0
   const animatedDistance = useCountUp(distanceNm)
   const timeHours = speed > 0 ? distanceNm / speed : 0
+
+  const onSelectAlternative = useCallback(
+    (i: number) => {
+      const newRoute = alternatives[i]
+      if (!newRoute) return
+      setRoute(newRoute)
+      setSelectedAlternativeIndex(i)
+      // Recompute transit ports for the new route geometry.
+      setTransitPorts(detectTransitPorts(newRoute, PORTS))
+    },
+    [alternatives, setRoute, setSelectedAlternativeIndex, setTransitPorts],
+  )
 
   return (
     <div
@@ -136,6 +158,34 @@ export default function RoutePanel() {
 
       {route && origin && destination && (
         <div className={styles.body}>
+          {alternatives.length > 1 && (
+            <div className={styles.alternatives} role="tablist" aria-label="Route alternatives">
+              {alternatives.map((alt, i) => {
+                const isActive = i === selectedAlternativeIndex
+                return (
+                  <button
+                    key={`${alt.properties.variant}-${i}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    className={`${styles.alternativeCard} ${
+                      isActive ? styles.alternativeCardActive : ''
+                    }`}
+                    onClick={() => onSelectAlternative(i)}
+                    title={alt.properties.variant}
+                  >
+                    <div className={styles.alternativeVariant}>
+                      {isActive && <span className={styles.alternativeCheck}>✓</span>}
+                      {alt.properties.variant}
+                    </div>
+                    <div className={styles.alternativeDistance}>
+                      {formatDistance(alt.properties.length)} nm
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
           <div className={styles.route}>
             <span>
               <span className={`${styles.dot} ${styles.dotOrigin}`} />
