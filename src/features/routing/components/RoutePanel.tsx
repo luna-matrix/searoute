@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMapStore } from '@/store/map'
 import { PORTS } from '@/data/ports'
+import VoyageTimeline from './VoyageTimeline'
 import styles from './RoutePanel.module.css'
 
 const DEFAULT_SPEED_KNOTS = 19
@@ -186,6 +187,7 @@ export default function RoutePanel() {
               </button>
             ))}
           </div>
+          <VoyageTimeline speedKnots={speed} />
         </div>
       )}
     </div>

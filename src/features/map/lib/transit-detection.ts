@@ -27,8 +27,9 @@ function toRad(deg: number): number {
   return (deg * Math.PI) / 180
 }
 
-/** Great-circle distance between two [lng, lat] points in km. */
-export function haversineKm(a: [number, number], b: [number, number]): number {
+/** Great-circle distance between two [lng, lat] points in km.
+ *  Accepts readonly tuples so callers can pass typed array coords. */
+export function haversineKm(a: readonly [number, number], b: readonly [number, number]): number {
   const [lng1, lat1] = a
   const [lng2, lat2] = b
   const dLat = toRad(lat2 - lat1)
