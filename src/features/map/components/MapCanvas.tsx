@@ -31,6 +31,7 @@ import PortMarker from './PortMarker'
 import SearchBar from '@/features/search/components/SearchBar'
 import PortDetailSheet from '@/features/port-detail/components/PortDetailSheet'
 import PortDetailPopover from '@/features/port-detail/components/PortDetailPopover'
+import RoutePanel from '@/features/routing/components/RoutePanel'
 import styles from './MapCanvas.module.css'
 
 const INITIAL_VIEW_STATE: MapViewState = {
@@ -452,6 +453,7 @@ export default function MapCanvas() {
       )}
       <PortMarker viewState={viewState} width={canvasSize.width} height={canvasSize.height} />
       <PortDetailSheet />
+      <RoutePanel />
       <div className={styles.attribution}>{basemap.attribution}</div>
     </div>
   )
