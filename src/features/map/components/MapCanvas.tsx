@@ -1,9 +1,12 @@
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import { DeckGL } from '@deck.gl/react'
 import { TileLayer } from '@deck.gl/geo-layers'
-import { BitmapLayer } from '@deck.gl/layers'
+import { BitmapLayer, ScatterplotLayer } from '@deck.gl/layers'
+import { PORTS } from '@/data/ports'
+import type { Port } from '@/types/port'
 import { BASEMAPS } from '../lib/basemaps'
 import type { BasemapConfig } from '../lib/basemaps'
+import { getPortFill, getPortRadiusPx } from '../lib/port-styles'
 import styles from './MapCanvas.module.css'
 
 interface MapCanvasProps {
@@ -48,13 +51,47 @@ export default function MapCanvas({ basemap = BASEMAPS.dark }: MapCanvasProps) {
           })
         },
       }),
+      new ScatterplotLayer<Port>({
+        id: 'ports',
+        data: PORTS,
+        getPosition: (d) => [d.lng, d.lat],
+        getRadius: getPortRadiusPx,
+        getFillColor: getPortFill,
+        radiusUnits: 'pixels',
+        pickable: true,
+        // Click handler lands in chunk 2.6 with the selection store.
+        onClick: (info) => {
+          const port = info.object as Port | undefined
+          if (port) {
+            console.log('[SeaRoute] port clicked:', port.name, port.id)
+          }
+        },
+      }),
     ],
     [basemap],
   )
 
+  const getTooltip = useCallback(({ object }: { object?: Port }) => {
+    if (!object) return null
+    const port = object
+    const locode = port.unlocode ? `<div class="${styles.tooltipMeta}">${port.unlocode}</div>` : ''
+    return {
+      html: `<div class="${styles.tooltip}">
+        <div class="${styles.tooltipName}">${port.name}</div>
+        <div class="${styles.tooltipCountry}">${port.country}</div>
+        ${locode}
+      </div>`,
+    }
+  }, [])
+
   return (
     <div className={styles.canvas}>
-      <DeckGL initialViewState={INITIAL_VIEW_STATE} controller={true} layers={layers} />
+      <DeckGL
+        initialViewState={INITIAL_VIEW_STATE}
+        controller={true}
+        layers={layers}
+        getTooltip={getTooltip}
+      />
       <div className={styles.attribution}>{basemap.attribution}</div>
     </div>
   )
