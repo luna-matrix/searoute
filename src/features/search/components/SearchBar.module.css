@@ -1,0 +1,104 @@
+.bar {
+  position: absolute;
+  top: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-search);
+  width: calc(100% - var(--space-4) * 2);
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-glass-panel);
+  backdrop-filter: blur(var(--blur-glass)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(140%);
+  border: 1px solid var(--color-border-on-glass);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 24px rgb(0 0 0 / 35%);
+  padding: var(--space-2);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  transition: background-color var(--duration-quick) var(--ease-out);
+}
+
+.row:focus-within {
+  background-color: var(--color-wet-ink-blue);
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--color-border-on-glass);
+  margin: 0 var(--space-3);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.dotOrigin {
+  background-color: var(--color-starboard-green);
+  color: var(--color-starboard-green);
+}
+
+.dotDestination {
+  background-color: var(--color-port-red);
+  color: var(--color-port-red);
+}
+
+.input {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: var(--color-sea-spray);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-normal);
+  padding: 0;
+  min-width: 0;
+}
+
+.input::placeholder {
+  color: var(--color-fog-grey);
+}
+
+.input:focus {
+  outline: 0;
+}
+
+.clearButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-fog-grey);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-quick) var(--ease-out),
+    color var(--duration-quick) var(--ease-out);
+}
+
+.clearButton:hover {
+  background-color: var(--color-chart-table-steel);
+  color: var(--color-arctic-white);
+}
+
+.clearButton:focus-visible {
+  outline: 2px solid var(--color-admiralty-signal);
+  outline-offset: 1px;
+}

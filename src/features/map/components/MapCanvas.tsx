@@ -17,6 +17,7 @@ import { getLaneLineColor, getLaneLineWidth } from '../lib/shipping-lane-styles'
 import CompassRose from './CompassRose'
 import MapControls from './MapControls'
 import PortMarker from './PortMarker'
+import SearchBar from '@/features/search/components/SearchBar'
 import styles from './MapCanvas.module.css'
 
 const INITIAL_VIEW_STATE: MapViewState = {
@@ -197,7 +198,7 @@ export default function MapCanvas() {
           }
         }}
       />
-      <PortMarker viewState={viewState} width={canvasSize.width} height={canvasSize.height} />
+      <SearchBar />
       <CompassRose bearing={viewState.bearing ?? 0} />
       <MapControls
         onZoomIn={onZoomIn}
@@ -207,6 +208,7 @@ export default function MapCanvas() {
         basemap={basemapId}
         perspective={(viewState.pitch ?? 0) > 0}
       />
+      <PortMarker viewState={viewState} width={canvasSize.width} height={canvasSize.height} />
       <div className={styles.attribution}>{basemap.attribution}</div>
     </div>
   )
