@@ -28,6 +28,7 @@ export default function SearchBar() {
 
   const setOriginId = useMapStore((s) => s.setOrigin)
   const setDestinationId = useMapStore((s) => s.setDestination)
+  const setViewingPort = useMapStore((s) => s.setViewingPort)
 
   const runSearch = useCallback((q: string) => {
     setResults(searchPorts(q))
@@ -233,6 +234,43 @@ export default function SearchBar() {
                 />
               </div>
               <div className={styles.resultMeta}>
+                <button
+                  type="button"
+                  className={styles.detailsButton}
+                  aria-label={`View details for ${r.port.name}`}
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setViewingPort(r.port.id)
+                    setResults([])
+                    setActiveField(null)
+                    setHighlightIndex(0)
+                  }}
+                >
+                  <svg
+                    viewBox="0 0 16 16"
+                    width="14"
+                    height="14"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <circle
+                      cx="8"
+                      cy="8"
+                      r="6.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                    />
+                    <circle cx="8" cy="5.5" r="0.9" fill="currentColor" />
+                    <path
+                      d="M8 8.5v4"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
                 <span className={styles.sizeBadge} data-size={r.port.size}>
                   {r.port.size}
                 </span>

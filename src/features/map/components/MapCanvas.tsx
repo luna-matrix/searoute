@@ -25,6 +25,7 @@ import CompassRose from './CompassRose'
 import MapControls from './MapControls'
 import PortMarker from './PortMarker'
 import SearchBar from '@/features/search/components/SearchBar'
+import PortDetailSheet from '@/features/port-detail/components/PortDetailSheet'
 import styles from './MapCanvas.module.css'
 
 const INITIAL_VIEW_STATE: MapViewState = {
@@ -257,6 +258,7 @@ export default function MapCanvas() {
         perspective={(viewState.pitch ?? 0) > 0}
       />
       <PortMarker viewState={viewState} width={canvasSize.width} height={canvasSize.height} />
+      <PortDetailSheet />
       <div className={styles.attribution}>{basemap.attribution}</div>
     </div>
   )
