@@ -13,20 +13,35 @@ interface PortDetailPopoverProps {
   canvasHeight: number
   isOrigin: boolean
   isDestination: boolean
+  isWaypoint: boolean
+  /** True when an origin and destination are already committed
+   *  (so the "Add as waypoint" action makes sense). */
+  canAddWaypoint: boolean
   onSetOrigin: (port: Port) => void
   onSetDestination: (port: Port) => void
+  onAddWaypoint: (port: Port) => void
   onViewDetails: (port: Port) => void
+  /** Cancels the hover-dismiss timer. The popover stays open
+   *  while the mouse is over it. */
+  onMouseEnter?: () => void
+  /** Re-starts the hover-dismiss timer. The popover hides
+   *  shortly after the mouse leaves (so brief exit-re-entry
+   *  still keeps it visible). */
+  onMouseLeave?: () => void
 }
 
 const POPOVER_WIDTH = 280
-const POPOVER_HEIGHT_ESTIMATE = 200
+const POPOVER_HEIGHT_ESTIMATE = 240
 const CURSOR_OFFSET = 14
 
 /**
  * Richer hover popover for port markers — supersedes the simple
  * name+country tooltip from chunk 2.2. Shows size, region, UN/LOCODE,
- * and the two Set-as-* actions plus a "View full details" link that
+ * and the Set-as-* actions plus a "View full details" link that
  * opens the PortDetailSheet.
+ *
+ * Phase 5: gains an "Add as waypoint" action when origin +
+ * destination are both set (otherwise the waypoint is meaningless).
  *
  * Positioned at the deck.gl pick point (info.x / info.y), with edge
  * flip so it stays inside the canvas.
@@ -39,9 +54,14 @@ export default function PortDetailPopover({
   canvasHeight,
   isOrigin,
   isDestination,
+  isWaypoint,
+  canAddWaypoint,
   onSetOrigin,
   onSetDestination,
+  onAddWaypoint,
   onViewDetails,
+  onMouseEnter,
+  onMouseLeave,
 }: PortDetailPopoverProps) {
   const ref = useRef<HTMLDivElement>(null)
 
@@ -73,6 +93,8 @@ export default function PortDetailPopover({
       style={{ left, top }}
       role="tooltip"
       onMouseDown={(e) => e.stopPropagation()}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       <div className={styles.name}>{port.name}</div>
       <div className={styles.subtitle}>
@@ -102,6 +124,16 @@ export default function PortDetailPopover({
           {isDestination ? '✓ Destination' : 'Set as Destination'}
         </button>
       </div>
+      {canAddWaypoint && (
+        <button
+          type="button"
+          className={`${styles.actionButton} ${styles.actionWaypoint}`}
+          onClick={() => onAddWaypoint(port)}
+          disabled={isWaypoint}
+        >
+          {isWaypoint ? '✓ Waypoint' : '+ Add as waypoint'}
+        </button>
+      )}
       <button type="button" className={styles.viewDetails} onClick={() => onViewDetails(port)}>
         View full details →
       </button>

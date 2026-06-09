@@ -1,14 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMapStore } from '@/store/map'
 import { PORTS } from '@/data/ports'
+import type { Port } from '@/types/port'
 import { detectTransitPorts } from '@/features/map/lib/transit-detection'
+import { computeVoyageSegments } from '../lib/voyage-segments'
 import VoyageTimeline from './VoyageTimeline'
 import styles from './RoutePanel.module.css'
 
+type Projection = 'globe' | 'flat'
+type SectionId = 'overview' | 'breakdown' | 'alternatives' | 'map' | 'speed'
+
 const DEFAULT_SPEED_KNOTS = 19
-/** PLAN.md snap points: 12 (slow steam), 15 (eco), 19 (standard), 22 (fast), 25 (max). */
 const SNAP_POINTS = [12, 15, 19, 22, 25] as const
 const SNAP_THRESHOLD = 1
+const KM_PER_NM = 1.852
 
 function snapValue(v: number): number {
   for (const sp of SNAP_POINTS) {
@@ -28,13 +33,11 @@ function formatDistance(nm: number): string {
   return Math.round(nm).toLocaleString()
 }
 
-/**
- * Animate a numeric value with requestAnimationFrame + ease-out cubic.
- * Honours prefers-reduced-motion by snapping to the target instantly.
- * The animation goes from the previously-displayed value to the new
- * target, so a route change animates from "old distance" to "new
- * distance" rather than always restarting from 0.
- */
+function formatDelta(nm: number): string {
+  const sign = nm >= 0 ? '+' : ''
+  return `${sign}${Math.round(nm).toLocaleString()}`
+}
+
 function useCountUp(target: number, durationMs = 800): number {
   const [display, setDisplay] = useState(target)
   const displayRef = useRef(target)
@@ -81,29 +84,15 @@ function useCountUp(target: number, durationMs = 800): number {
   return display
 }
 
-/**
- * Bottom-anchored panel that surfaces the route outcome.
- *
- * - Hidden when there's no route, no in-flight compute, and no
- *   error. Slide-up transition is honoured automatically via
- *   the duration-slow token (zeroed under prefers-reduced-motion).
- * - Alternatives row at the top: one card per seaRouteAlternatives
- *   option (e.g., 'Suez Canal', 'Cape of Good Hope'). Click to
- *   switch — the active card gets a brighter border; the path
- *   layer and the VoyageTimeline both re-derive from the new
- *   selected route.
- * - Loading: spinner + "Computing route…"
- * - Error: human-readable message (NoRouteError / SnapFailedError
- *   / generic — all mapped to strings in MapCanvas's
- *   auto-compute effect).
- * - Success: route header (origin → destination), then the
- *   HeroDistance (animated count-up), then the SailingTime at
- *   the user-chosen vessel speed (default 19 knots, snap points
- *   at 12/15/19/22/25 per PLAN.md). Speed slider live-recomputes
- *   the SailingTime as the user drags. VoyageTimeline at the
- *   bottom.
- */
-export default function RoutePanel() {
+export default function RoutePanel({
+  projection,
+  continentRings,
+  settingsOpen,
+}: {
+  projection: Projection
+  continentRings?: readonly (readonly [number, number][])[] | null
+  settingsOpen?: boolean
+}) {
   const route = useMapStore((s) => s.route)
   const alternatives = useMapStore((s) => s.alternatives)
   const selectedAlternativeIndex = useMapStore((s) => s.selectedAlternativeIndex)
@@ -113,17 +102,37 @@ export default function RoutePanel() {
   const destinationId = useMapStore((s) => s.destinationId)
   const setRoute = useMapStore((s) => s.setRoute)
   const setSelectedAlternativeIndex = useMapStore((s) => s.setSelectedAlternativeIndex)
-  const setTransitPorts = useMapStore((s) => s.setTransitPorts)
+  const setAlongRoutePorts = useMapStore((s) => s.setAlongRoutePorts)
+  const viewingPortId = useMapStore((s) => s.viewingPortId)
+  const includeLongAlternatives = useMapStore((s) => s.includeLongAlternatives)
+  const setIncludeLongAlternatives = useMapStore((s) => s.setIncludeLongAlternatives)
 
   const [speed, setSpeed] = useState<number>(DEFAULT_SPEED_KNOTS)
+  const [openSections, setOpenSections] = useState<Set<SectionId>>(
+    () => new Set<SectionId>(['breakdown', 'alternatives', 'map']),
+  )
 
   const origin = originId ? PORTS.find((p) => p.id === originId) : undefined
   const destination = destinationId ? PORTS.find((p) => p.id === destinationId) : undefined
+  const waypointIds = useMapStore((s) => s.waypoints)
+  const alternativeLabels = useMapStore((s) => s.alternativeLabels)
+  const waypoints: Port[] = waypointIds
+    .map((id) => PORTS.find((p) => p.id === id))
+    .filter((p): p is Port => p !== undefined)
+  const isMultiLeg = waypoints.length > 0
 
-  const hasContent = Boolean(route || isComputing || error)
+  const hasContent = Boolean((route || isComputing || error) && !viewingPortId && !settingsOpen)
   const distanceNm = route?.properties.length ?? 0
   const animatedDistance = useCountUp(distanceNm)
   const timeHours = speed > 0 ? distanceNm / speed : 0
+
+  const segments = useMemo(() => {
+    if (!route || !origin || !destination) return null
+    return computeVoyageSegments(route, origin.name, destination.name, speed)
+  }, [route, origin, destination, speed])
+
+  const baselineNm =
+    alternatives.length > 0 ? (alternatives[0]?.properties.length ?? distanceNm) : distanceNm
 
   const onSelectAlternative = useCallback(
     (i: number) => {
@@ -131,11 +140,19 @@ export default function RoutePanel() {
       if (!newRoute) return
       setRoute(newRoute)
       setSelectedAlternativeIndex(i)
-      // Recompute transit ports for the new route geometry.
-      setTransitPorts(detectTransitPorts(newRoute, PORTS))
+      setAlongRoutePorts(detectTransitPorts(newRoute, PORTS, undefined, continentRings))
     },
-    [alternatives, setRoute, setSelectedAlternativeIndex, setTransitPorts],
+    [alternatives, setRoute, setSelectedAlternativeIndex, setAlongRoutePorts, continentRings],
   )
+
+  const toggleSection = useCallback((section: SectionId) => {
+    setOpenSections((prev) => {
+      const next = new Set(prev)
+      if (next.has(section)) next.delete(section)
+      else next.add(section)
+      return next
+    })
+  }, [])
 
   return (
     <div
@@ -158,86 +175,198 @@ export default function RoutePanel() {
 
       {route && origin && destination && (
         <div className={styles.body}>
-          {alternatives.length > 1 && (
-            <div className={styles.alternatives} role="tablist" aria-label="Route alternatives">
-              {alternatives.map((alt, i) => {
-                const isActive = i === selectedAlternativeIndex
-                return (
-                  <button
-                    key={`${alt.properties.variant}-${i}`}
-                    type="button"
-                    role="tab"
-                    aria-selected={isActive}
-                    className={`${styles.alternativeCard} ${
-                      isActive ? styles.alternativeCardActive : ''
-                    }`}
-                    onClick={() => onSelectAlternative(i)}
-                    title={alt.properties.variant}
-                  >
-                    <div className={styles.alternativeVariant}>
-                      {isActive && <span className={styles.alternativeCheck}>✓</span>}
-                      {alt.properties.variant}
-                    </div>
-                    <div className={styles.alternativeDistance}>
-                      {formatDistance(alt.properties.length)} nm
-                    </div>
-                  </button>
-                )
-              })}
+          {/* ---- Header ---- */}
+          <div className={styles.header}>
+            <div className={styles.headerTitle}>Voyage</div>
+            <div className={styles.headerMeta}>
+              <span className={styles.headerChip}>{isMultiLeg ? 'Multi-leg' : 'Direct'}</span>
+              <span className={styles.headerChip}>{projection === 'globe' ? 'Globe' : 'Flat'}</span>
             </div>
-          )}
-          <div className={styles.route}>
+          </div>
+
+          {/* ---- Route line ---- */}
+          <div className={styles.routeRow}>
             <span>
               <span className={`${styles.dot} ${styles.dotOrigin}`} />
               <span className={styles.portName}>{origin.name}</span>
             </span>
-            <span className={styles.routeArrow}>→</span>
-            <span>
+            {waypoints.map((wp) => (
+              <span key={wp.id} className={styles.routeSeg}>
+                <span className={styles.routeArrow}>→</span>
+                <span className={`${styles.dot} ${styles.dotWaypoint}`} />
+                <span className={styles.portName}>{wp.name}</span>
+              </span>
+            ))}
+            <span className={styles.routeSeg}>
+              <span className={styles.routeArrow}>→</span>
               <span className={`${styles.dot} ${styles.dotDestination}`} />
               <span className={styles.portName}>{destination.name}</span>
             </span>
           </div>
+
+          {/* ---- Hero ---- */}
           <div className={styles.hero}>
             <span className={styles.heroValue}>{formatDistance(animatedDistance)}</span>
             <span className={styles.heroUnit}>nm</span>
           </div>
+          <div className={styles.heroKm}>{formatDistance(animatedDistance * KM_PER_NM)} km</div>
           <div className={styles.subline}>
-            <span className={styles.sublineLabel}>Sailing time @</span>
-            <span>{speed} kn</span>
+            <span className={styles.sublineLabel}>Sailing time @ {speed} kn</span>
             <span>·</span>
             <span>{formatSailingTime(timeHours)}</span>
           </div>
-          <div className={styles.speedControl}>
-            <input
-              type="range"
-              min={10}
-              max={25}
-              step={1}
-              value={speed}
-              onChange={(e) => setSpeed(snapValue(Number(e.target.value)))}
-              className={styles.slider}
-              aria-label="Vessel speed in knots"
-              aria-valuemin={10}
-              aria-valuemax={25}
-              aria-valuenow={speed}
-            />
-            <div className={styles.speedValue}>{speed} kn</div>
-          </div>
-          <div className={styles.snapTicks}>
+
+          {/* ---- Speed pills ---- */}
+          <div className={styles.speedPills}>
             {SNAP_POINTS.map((sp) => (
               <button
                 key={sp}
                 type="button"
-                className={`${styles.snapTick} ${speed === sp ? styles.snapTickActive : ''}`}
+                className={`${styles.speedPill} ${speed === sp ? styles.speedPillActive : ''}`}
                 onClick={() => setSpeed(sp)}
                 aria-label={`Set speed to ${sp} knots`}
-                aria-pressed={speed === sp}
               >
-                {sp}
+                {sp} kn
               </button>
             ))}
           </div>
-          <VoyageTimeline speedKnots={speed} />
+
+          {/* ---- Accordion: Breakdown ---- */}
+          {segments && segments.segments.length > 0 && (
+            <Section
+              id="breakdown"
+              title="Route Breakdown"
+              open={openSections.has('breakdown')}
+              onToggle={() => toggleSection('breakdown')}
+            >
+              <div className={styles.breakdown}>
+                {segments.segments.map((seg, i) => (
+                  <div key={i} className={styles.breakdownRow}>
+                    <span className={styles.breakdownLabel}>{seg.label}</span>
+                    <span className={styles.breakdownDist}>
+                      {formatDistance(seg.distanceNm)} nm
+                    </span>
+                    <span className={styles.breakdownTime}>{formatSailingTime(seg.timeHours)}</span>
+                    <span className={styles.breakdownPct}>{seg.percentage}%</span>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {/* ---- Accordion: Alternatives ---- */}
+          {!isMultiLeg && alternatives.length > 1 && (
+            <Section
+              id="alternatives"
+              title={`Alternatives (${alternatives.length})`}
+              open={openSections.has('alternatives')}
+              onToggle={() => toggleSection('alternatives')}
+            >
+              <div className={styles.altList}>
+                {alternatives.map((alt, i) => {
+                  const isActive = i === selectedAlternativeIndex
+                  const label = alternativeLabels[i] ?? `Route ${i + 1}`
+                  const altNm = alt.properties.length
+                  const delta = altNm - baselineNm
+                  return (
+                    <button
+                      key={`${label}-${i}`}
+                      type="button"
+                      className={`${styles.altPill} ${isActive ? styles.altPillActive : ''}`}
+                      onClick={() => onSelectAlternative(i)}
+                    >
+                      <span className={styles.altPillIcon}>
+                        {isActive ? '✓' : altNm === baselineNm ? '◦' : '↺'}
+                      </span>
+                      <span className={styles.altPillLabel}>{label}</span>
+                      <span className={styles.altPillNm}>{formatDistance(altNm)} nm</span>
+                      {delta !== 0 && (
+                        <span
+                          className={`${styles.altPillDelta} ${delta > 0 ? styles.altPillDeltaUp : ''}`}
+                        >
+                          {formatDelta(delta)} nm
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              <button
+                type="button"
+                className={styles.showLongToggle}
+                onClick={() => setIncludeLongAlternatives(!includeLongAlternatives)}
+                aria-pressed={includeLongAlternatives}
+              >
+                {includeLongAlternatives ? '− Hide longer detours' : '+ Show longer detours'}
+              </button>
+            </Section>
+          )}
+
+          {/* ---- Speed slider (collapsible) ---- */}
+          <Section
+            id="speed"
+            title="Vessel Speed"
+            open={openSections.has('speed')}
+            onToggle={() => toggleSection('speed')}
+          >
+            <div className={styles.speedControl}>
+              <input
+                type="range"
+                min={10}
+                max={25}
+                step={1}
+                value={speed}
+                onChange={(e) => setSpeed(snapValue(Number(e.target.value)))}
+                className={styles.slider}
+                aria-label="Vessel speed in knots"
+              />
+              <div className={styles.speedValue}>{speed} kn</div>
+            </div>
+          </Section>
+
+          {/* ---- Timeline ---- */}
+          <Section
+            id="map"
+            title="Voyage Map"
+            open={openSections.has('map')}
+            onToggle={() => toggleSection('map')}
+          >
+            <VoyageTimeline speedKnots={speed} />
+          </Section>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Section({
+  id,
+  title,
+  open,
+  onToggle,
+  children,
+}: {
+  id: SectionId
+  title: string
+  open: boolean
+  onToggle: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <div className={styles.section}>
+      <button
+        type="button"
+        className={styles.sectionHeader}
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={`rp-section-${id}`}
+      >
+        <span className={styles.sectionTitle}>{title}</span>
+        <span className={styles.sectionChevron}>{open ? '▾' : '▸'}</span>
+      </button>
+      {open && (
+        <div id={`rp-section-${id}`} className={styles.sectionBody}>
+          {children}
         </div>
       )}
     </div>

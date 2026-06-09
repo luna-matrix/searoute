@@ -1,0 +1,93 @@
+.legend {
+  width: 188px;
+  background-color: var(--color-glass-panel);
+  backdrop-filter: blur(var(--blur-glass)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(140%);
+  border: 1px solid var(--color-border-on-glass);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-control);
+  overflow: hidden;
+}
+
+.header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: 0;
+  color: var(--color-sea-spray);
+  cursor: pointer;
+}
+
+.header:hover {
+  background-color: var(--color-wet-ink-blue);
+}
+
+.title {
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase;
+}
+
+.chevron {
+  font-family: var(--font-family-num);
+  color: var(--color-fog-grey);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--color-border-on-glass);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: 0;
+  color: var(--color-sea-spray);
+  text-align: left;
+  cursor: pointer;
+}
+
+.item + .item {
+  border-top: 1px solid var(--color-border-on-glass);
+}
+
+.item:hover {
+  background-color: var(--color-wet-ink-blue);
+}
+
+.itemActive {
+  background-color: var(--color-overlay-mid);
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.swatchRoute {
+  background-color: var(--color-admiralty-signal);
+  box-shadow: 0 0 6px var(--color-admiralty-signal);
+}
+
+.swatchWaypoint {
+  background-color: var(--color-admiralty-signal);
+  box-shadow: 0 0 6px var(--color-admiralty-signal);
+  border: 1px solid var(--color-arctic-white);
+}
+
+.swatchAlong {
+  background-color: var(--color-signal-amber);
+  box-shadow: 0 0 6px var(--color-signal-amber);
+}

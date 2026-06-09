@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useMapStore } from '@/store/map'
 import { PORTS } from '@/data/ports'
-import { computeRouteSegments } from '../lib/segments'
+import { computeVoyageSegments } from '../lib/voyage-segments'
 import styles from './VoyageTimeline.module.css'
 
 interface VoyageTimelineProps {
@@ -19,72 +19,73 @@ function formatHours(hours: number): string {
   return `${days}d ${remainder}h`
 }
 
-/**
- * Vertical radar-plot-style timeline. One row per leg of the
- * route, with the segment's from/to ports on the left and the
- * distance + time on the right. The connecting line on the
- * left is the maritime spine of the voyage; dots mark the
- * waypoints (origin green, transit amber, destination red).
- *
- * VoyageTimeline lives in the RoutePanel and only renders
- * when a route is present.
- */
 export default function VoyageTimeline({ speedKnots }: VoyageTimelineProps) {
   const route = useMapStore((s) => s.route)
-  const transitPorts = useMapStore((s) => s.transitPorts)
+  const alongRoutePorts = useMapStore((s) => s.alongRoutePorts)
   const originId = useMapStore((s) => s.originId)
   const destinationId = useMapStore((s) => s.destinationId)
 
   const origin = originId ? PORTS.find((p) => p.id === originId) : null
   const destination = destinationId ? PORTS.find((p) => p.id === destinationId) : null
 
-  const segments = useMemo(
-    () =>
-      route
-        ? computeRouteSegments(route, transitPorts, origin ?? null, destination ?? null, speedKnots)
-        : [],
-    [route, transitPorts, origin, destination, speedKnots],
-  )
+  const segments = useMemo(() => {
+    if (!route || !origin || !destination) return null
+    return computeVoyageSegments(route, origin.name, destination.name, speedKnots)
+  }, [route, origin, destination, speedKnots])
 
-  if (!route || segments.length === 0) return null
+  if (!route || !origin || !destination || !segments) return null
+
+  const majorCount = alongRoutePorts.filter((p) => p.size === 'Major').length
+  const hasPassages = segments.segments.length > 1
 
   return (
-    <div className={styles.timeline} aria-label="Voyage timeline">
-      <div className={styles.heading}>Voyage</div>
-      {segments.map((seg, i) => {
-        const isFirst = i === 0
-        const isLast = i === segments.length - 1
-        const dotClass =
-          isFirst && seg.from === null
-            ? `${styles.dot} ${styles.dotOrigin}`
-            : isLast
-              ? `${styles.dot} ${styles.dotDestination}`
-              : styles.dot
-        return (
-          <div className={styles.segment} key={`${seg.from?.id ?? 'origin'}-${seg.to.id}`}>
-            <div className={styles.gutter}>
-              {!isFirst && <div className={styles.line} />}
-              <div className={dotClass} />
+    <div className={styles.timeline} aria-label="Voyage summary">
+      {hasPassages ? (
+        <div className={styles.segmentList}>
+          {segments.segments.map((seg, i) => (
+            <div key={i} className={styles.segmentRow}>
+              <div className={styles.segmentGutter}>
+                <div
+                  className={`${styles.segmentDot} ${i === 0 ? styles.dotOrigin : i === segments.segments.length - 1 ? styles.dotDestination : styles.dotChokepoint}`}
+                />
+                {i < segments.segments.length - 1 && <div className={styles.segmentLine} />}
+              </div>
+              <div className={styles.segmentBody}>
+                <div className={styles.segmentLabel}>{seg.label}</div>
+                <div className={styles.segmentMeta}>
+                  <span className={styles.segmentDist}>{formatNm(seg.distanceNm)}</span>
+                  <span className={styles.segmentSep}>·</span>
+                  <span>{formatHours(seg.timeHours)}</span>
+                </div>
+              </div>
             </div>
-            <div className={`${styles.body} ${isLast ? styles.bodyLast : ''}`}>
-              <div className={styles.ports}>
-                {seg.from && (
-                  <>
-                    <span className={styles.portFrom}>{seg.from.name}</span>
-                    <span className={styles.arrow}>→</span>
-                  </>
-                )}
-                <span className={styles.portTo}>{seg.to.name}</span>
-              </div>
-              <div className={styles.metrics}>
-                <span className={styles.metricValue}>{formatNm(seg.distanceNm)}</span>
-                <span> · </span>
-                <span>{formatHours(seg.timeHours)}</span>
-              </div>
+          ))}
+        </div>
+      ) : (
+        <div className={styles.simpleRow}>
+          <div className={styles.simpleGutter}>
+            <div className={`${styles.segmentDot} ${styles.dotOrigin}`} />
+            <div className={styles.segmentLine} />
+            <div className={`${styles.segmentDot} ${styles.dotDestination}`} />
+          </div>
+          <div className={styles.simpleBody}>
+            <div className={styles.simpleLabel}>
+              {origin.name} → {destination.name}
+            </div>
+            <div className={styles.simpleMeta}>
+              <span className={styles.segmentDist}>{formatNm(segments.totalNm)}</span>
+              <span className={styles.segmentSep}>·</span>
+              <span>{formatHours(segments.segments[0]!.timeHours)}</span>
             </div>
           </div>
-        )
-      })}
+        </div>
+      )}
+
+      {majorCount > 0 && (
+        <div className={styles.via}>
+          via {majorCount} major {majorCount === 1 ? 'port' : 'ports'} along the route
+        </div>
+      )}
     </div>
   )
 }

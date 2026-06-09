@@ -1,22 +1,27 @@
 import type { LineString } from 'geojson'
 import type { SeaRouteFeature } from '@/lib/searoute'
 import type { Port, PortSize } from '@/types/port'
+import { pathCrossesLand } from './point-in-polygon'
 
 /**
  * Transit port detection.
  *
- * Given a route's LineString (hundreds of points per the docs),
- * find Major + Intermediate ports within `thresholdKm` of any
- * point on the route. Sort by position along the path (origin to
- * destination) so the timeline reads naturally.
+ * Given a route's LineString (hundreds of points), find Major +
+ * Intermediate ports within `thresholdKm` of any point on the route.
+ * Sort by position along the path (origin → destination) so the
+ * timeline reads naturally.
+ *
+ * If `continentRings` are supplied, each candidate is validated
+ * against a land-crossing check: the great-circle path between the
+ * port and its nearest route coordinate is sampled, and if any
+ * sample point falls inside a continent polygon ring, the port is
+ * excluded.  This prevents false positives where a port is within
+ * haversine distance but on the wrong side of a landmass
+ * (e.g. east-coast Malaysia ports appearing for a Malacca Strait
+ * route on the west side of the peninsula).
  *
  * We use the haversine great-circle distance, accurate to ~0.5%
  * — more than enough for "is this port near the route".
- *
- * For each candidate port, we keep the minimum distance to any
- * route point, then dedupe (no port appears twice even if it's
- * near multiple route points) and sort by minimum position along
- * the route.
  */
 
 const MAJOR_INTERMEDIATE: ReadonlyArray<PortSize> = ['Major', 'Intermediate']
@@ -27,8 +32,7 @@ function toRad(deg: number): number {
   return (deg * Math.PI) / 180
 }
 
-/** Great-circle distance between two [lng, lat] points in km.
- *  Accepts readonly tuples so callers can pass typed array coords. */
+/** Great-circle distance between two [lng, lat] points in km. */
 export function haversineKm(a: readonly [number, number], b: readonly [number, number]): number {
   const [lng1, lat1] = a
   const [lng2, lat2] = b
@@ -52,38 +56,44 @@ export function detectTransitPorts(
   route: SeaRouteFeature,
   ports: ReadonlyArray<Port>,
   thresholdKm = 92.6, // 50 nautical miles
+  continentRings?: readonly (readonly [number, number][])[] | null,
 ): Port[] {
   const coords = (route.geometry as LineString).coordinates as [number, number][]
   if (coords.length === 0) return []
-  const thresholdSq = thresholdKm * thresholdKm
 
   const candidates = ports.filter((p) => MAJOR_INTERMEDIATE.includes(p.size))
   const hits: TransitHit[] = []
+
   for (const port of candidates) {
-    const portPt: [number, number] = [port.lng, port.lat]
-    let minSq = Infinity
+    const portPt: readonly [number, number] = [port.lng, port.lat]
+    let minDist = Infinity
     let nearestIndex = 0
+    let nearestCoord: [number, number] = coords[0]!
+
     for (let i = 0; i < coords.length; i++) {
-      const dx = coords[i][0] - portPt[0]
-      const dy = coords[i][1] - portPt[1]
-      // Quick mid-latitude Euclidean pre-filter. We still compute
-      // haversine for the nearest candidate but only if the
-      // straight-line gap is small enough to be plausible.
+      const routePt = coords[i]!
+      const dx = routePt[0] - portPt[0]
+      const dy = routePt[1] - portPt[1]
       const euclidSq = dx * dx + dy * dy
-      if (euclidSq > 25) continue // ~5° lat/lng, never within threshold
-      const d = haversineKm(portPt, coords[i])
-      if (d < minSq) {
-        minSq = d
+      if (euclidSq > 25) continue
+
+      const d = haversineKm(portPt, routePt)
+      if (d < minDist) {
+        minDist = d
         nearestIndex = i
+        nearestCoord = routePt
       }
     }
-    if (minSq <= thresholdSq * thresholdSq) {
-      hits.push({ port, minDistanceKm: Math.sqrt(minSq), nearestIndex })
+
+    if (minDist > thresholdKm) continue
+
+    if (continentRings && continentRings.length > 0) {
+      if (pathCrossesLand(portPt, nearestCoord, continentRings)) continue
     }
+
+    hits.push({ port, minDistanceKm: minDist, nearestIndex })
   }
 
-  // Sort by position along the route (origin → destination) so
-  // downstream UIs (timeline, alternative ranking) read naturally.
   hits.sort((a, b) => a.nearestIndex - b.nearestIndex)
   return hits.map((h) => h.port)
 }

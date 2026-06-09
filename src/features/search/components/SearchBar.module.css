@@ -1,11 +1,10 @@
 .bar {
   position: absolute;
   top: var(--space-4);
-  left: 50%;
-  transform: translateX(-50%);
+  left: var(--space-4);
   z-index: var(--z-search);
-  width: calc(100% - var(--space-4) * 2);
-  max-width: 600px;
+  width: 400px;
+  max-width: calc(100% - var(--space-4) * 2);
   display: flex;
   flex-direction: column;
   background-color: var(--color-glass-panel);
@@ -13,7 +12,7 @@
   -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(140%);
   border: 1px solid var(--color-border-on-glass);
   border-radius: var(--radius-lg);
-  box-shadow: 0 4px 24px rgb(0 0 0 / 35%);
+  box-shadow: var(--shadow-search);
   padding: var(--space-2);
 }
 
@@ -28,6 +27,76 @@
 
 .row:focus-within {
   background-color: var(--color-wet-ink-blue);
+}
+
+.confirmRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--duration-quick) var(--ease-out);
+}
+
+.confirmRow:hover {
+  background-color: var(--color-wet-ink-blue);
+}
+
+.confirmContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.confirmName {
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-sea-spray);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.confirmMeta {
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-caption);
+  color: var(--color-fog-grey);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.confirmBadges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.confirmEditIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-fog-grey);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-quick) var(--ease-out),
+    color var(--duration-quick) var(--ease-out);
+}
+
+.confirmEditIcon:hover {
+  background-color: var(--color-chart-table-steel);
+  color: var(--color-arctic-white);
 }
 
 .divider {
@@ -92,6 +161,72 @@
 .dotDestination {
   background-color: var(--color-port-red);
   color: var(--color-port-red);
+}
+
+.dotWaypoint {
+  background-color: var(--color-admiralty-signal);
+  color: var(--color-admiralty-signal);
+}
+
+.waypointRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background-color: var(--color-overlay-mid);
+}
+
+.waypointRow .confirmContent {
+  flex: 1;
+}
+
+.waypointName {
+  flex: 1;
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-body);
+  color: var(--color-sea-spray);
+  font-weight: var(--font-weight-regular);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.addStopArea {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 0;
+}
+
+.addStopButton {
+  background: transparent;
+  border: 1px dashed var(--color-border-on-glass);
+  border-radius: var(--radius-pill);
+  color: var(--color-fog-grey);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.02em;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-quick) var(--ease-out),
+    color var(--duration-quick) var(--ease-out),
+    border-color var(--duration-quick) var(--ease-out);
+}
+
+.addStopButton:hover {
+  background-color: var(--color-wet-ink-blue);
+  border-color: var(--color-admiralty-signal);
+  color: var(--color-arctic-white);
+  border-style: solid;
+}
+
+.addStopButton:focus-visible {
+  outline: 2px solid var(--color-admiralty-signal);
+  outline-offset: 1px;
 }
 
 .input {
@@ -172,6 +307,28 @@
 
 .result:last-child {
   border-bottom: 0;
+}
+
+.resultDisabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dropdownSectionLabel {
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-micro);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-fog-grey);
+  letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase;
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  background-color: var(--color-overlay-soft);
+}
+
+.dropdownDivider {
+  height: 1px;
+  background-color: var(--color-border-on-glass);
+  margin: 0 var(--space-3);
 }
 
 .result:hover,

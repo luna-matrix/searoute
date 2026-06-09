@@ -10,6 +10,7 @@ interface PortMarkerProps {
   viewState: MapViewState
   width: number
   height: number
+  isGlobe: boolean
 }
 
 /**
@@ -22,7 +23,7 @@ interface PortMarkerProps {
  * honour prefers-reduced-motion (the duration tokens are zeroed
  * in tokens.css under that media query).
  */
-export default function PortMarker({ viewState, width, height }: PortMarkerProps) {
+export default function PortMarker({ viewState, width, height, isGlobe }: PortMarkerProps) {
   const selectedPortId = useMapStore((s) => s.selectedPortId)
   const port: Port | undefined = selectedPortId
     ? PORTS.find((p) => p.id === selectedPortId)
@@ -31,7 +32,7 @@ export default function PortMarker({ viewState, width, height }: PortMarkerProps
   const [screen, setScreen] = useState<{ x: number; y: number } | null>(null)
 
   useEffect(() => {
-    if (!port || width === 0 || height === 0) {
+    if (!port || width === 0 || height === 0 || isGlobe) {
       setScreen(null)
       return
     }
@@ -46,9 +47,9 @@ export default function PortMarker({ viewState, width, height }: PortMarkerProps
     } else {
       setScreen(null)
     }
-  }, [port, viewState, width, height])
+  }, [port, viewState, width, height, isGlobe])
 
-  if (!port || !screen) return null
+  if (!port || !screen || isGlobe) return null
 
   return (
     <div className={styles.marker} style={{ left: screen.x, top: screen.y }}>

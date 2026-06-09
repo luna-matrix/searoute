@@ -1,9 +1,4 @@
 .controls {
-  position: absolute;
-  /* Sits below the compass (64px tall) with the same --space-4 inset. */
-  top: calc(64px + var(--space-4) * 2);
-  right: var(--space-4);
-  z-index: var(--z-controls);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -18,15 +13,57 @@
   border: 1px solid var(--color-border-on-glass);
   border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: 0 2px 12px rgb(0 0 0 / 30%);
+  box-shadow: var(--shadow-control);
+}
+
+.choiceGroup {
+  flex-direction: row;
+}
+
+.choiceButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--color-sea-spray);
+  cursor: pointer;
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-semibold);
+  transition:
+    background-color var(--duration-quick) var(--ease-out),
+    color var(--duration-quick) var(--ease-out);
+}
+
+.choiceButton + .choiceButton {
+  border-left: 1px solid var(--color-border-on-glass);
+}
+
+.choiceButton:hover {
+  background-color: var(--color-wet-ink-blue);
+  color: var(--color-arctic-white);
+}
+
+.choiceButton:focus-visible {
+  outline: 2px solid var(--color-admiralty-signal);
+  outline-offset: -2px;
+}
+
+.choiceButtonActive {
+  background-color: var(--color-admiralty-signal);
+  color: var(--color-arctic-white);
 }
 
 .button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   background: transparent;
   border: 0;
   padding: 0;
@@ -50,6 +87,11 @@
 .button:focus-visible {
   outline: 2px solid var(--color-admiralty-signal);
   outline-offset: -2px;
+}
+
+.buttonActive {
+  background-color: var(--color-admiralty-signal);
+  color: var(--color-arctic-white);
 }
 
 .button + .button {

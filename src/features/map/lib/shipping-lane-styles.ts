@@ -6,22 +6,21 @@ type RGBA = [number, number, number, number]
 /**
  * Shipping lane styling. Subtle "ghost reference" lines so the lanes
  * sit behind the route + ports. Primary lanes are slightly more
- * visible than alternatives; restricted lanes get a port-red tint
- * to telegraph that they're usually closed (e.g., Northwest Passage
- * in winter).
+ * visible than alternatives; restricted lanes get a signal-amber tint
+ * to mark them as conditional (e.g., Northwest Passage in winter).
  *
  * Color values mirror the Admiralty Night tokens in tokens.css.
  */
 const LANE_LINE_COLOR: Record<ShippingLaneImportance, RGBA> = {
   primary: [30, 95, 180, 100],
   alternative: [30, 95, 180, 50],
-  restricted: [230, 57, 70, 70],
+  restricted: [247, 127, 0, 60],
 }
 
 const LANE_LINE_WIDTH_PX: Record<ShippingLaneImportance, number> = {
   primary: 1.4,
   alternative: 1,
-  restricted: 1.2,
+  restricted: 0.8,
 }
 
 /**

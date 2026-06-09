@@ -63,3 +63,27 @@ export function searchPorts(query: string): PortSearchResult[] {
       score: r.score,
     }))
 }
+
+/**
+ * Phase 5: "Common destinations" suggestions for a given origin.
+ *
+ * Resolves the origin's `connections` (a curated list of port ids
+ * — common trade partners) to Port objects, in the order the
+ * curator wrote them. If the origin has no connections, returns
+ * an empty array (caller can fall back to the regular search).
+ *
+ * Limits to the first 6 partners so the suggestions section
+ * stays scannable in the dropdown.
+ */
+export function suggestCommonDestinations(originId: string | null): Port[] {
+  if (!originId) return []
+  const origin = PORTS.find((p) => p.id === originId)
+  if (!origin || !origin.connections || origin.connections.length === 0) return []
+  const out: Port[] = []
+  for (const id of origin.connections) {
+    if (out.length >= 6) break
+    const p = PORTS.find((x) => x.id === id)
+    if (p && p.id !== originId) out.push(p)
+  }
+  return out
+}

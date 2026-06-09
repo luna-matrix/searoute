@@ -1,14 +1,23 @@
 /*
- * Admiralty Night — design tokens for SeaRoute.
+ * SeaRoute — design tokens.
  * The only file in the codebase that contains raw color values.
  * Every other file must reference these via var(--token-name).
  * See PLAN.md "Visual Design System" for rationale.
+ *
+ * Two themes:
+ *   - Admiralty Night (default): dark, like a digital chart table
+ *   - Admiralty Day: light, like a paper admiralty chart in daylight
+ *
+ * Selection precedence:
+ *   1. Explicit data-theme attribute on :root (user toggled)
+ *   2. prefers-color-scheme media query (system default)
+ *   3. The :root default (Admiralty Night)
  */
 
 :root {
   color-scheme: dark;
 
-  /* ---------- Colors — Admiralty Night palette ---------- */
+  /* ---------- Colors — Admiralty Night palette (default) ---------- */
   --color-deep-chart-navy: #060d17; /* Background — like deep ocean at night */
   --color-chart-table-steel: #0f1e33; /* Panel surfaces — like a metal chart table */
   --color-wet-ink-blue: #1a3352; /* Elevated panels */
@@ -28,6 +37,31 @@
   --color-border-on-glass: rgb(255 255 255 / 6%);
   --color-border-on-elevated: rgb(255 255 255 / 10%);
   --color-chart-grid: rgb(255 255 255 / 2%);
+
+  /* ---------- Theme meta (consumed by deck.gl via lib/* helpers) ---------- */
+  --theme-mode: 'dark';
+
+  /* Space color — what's behind the globe in the dark theme. A
+   * soft mid-grey (lighter than the dark basemap) so the sphere
+   * reads as 3D against the background rather than melting into
+   * it. Two stops give a subtle vignette around the globe. */
+  --color-space-stop-1: #2a2e38;
+  --color-space-stop-2: #161a22;
+
+  /* Small dark overlays used inside glass panels. These were
+   * previously hardcoded `rgb(0 0 0 / x%)` values in component
+   * CSS, which made the light theme feel like a dark UI with
+   * flipped text. */
+  --color-overlay-soft: rgb(0 0 0 / 15%);
+  --color-overlay-mid: rgb(0 0 0 / 20%);
+  --color-overlay-strong: rgb(0 0 0 / 30%);
+  --color-overlay-heavy: rgb(0 0 0 / 40%);
+
+  /* Shadow hierarchy: controls < search < panel < popover */
+  --shadow-control: 0 2px 12px rgb(0 0 0 / 26%);
+  --shadow-search: 0 6px 24px rgb(0 0 0 / 32%);
+  --shadow-panel: 0 12px 32px rgb(0 0 0 / 38%);
+  --shadow-popover: 0 12px 28px rgb(0 0 0 / 44%);
 
   /* ---------- Typography ---------- */
   --font-family-ui: 'Inter', system-ui, -apple-system, sans-serif;
@@ -74,6 +108,8 @@
   --z-controls: 20;
   --z-search: 30;
   --z-panel: 40;
+  --z-panel-overlay: 41;
+  --z-popover: 45;
   --z-toast: 50;
   --z-modal: 60;
 
@@ -94,5 +130,97 @@
     --duration-quick: 0ms;
     --duration-base: 0ms;
     --duration-slow: 0ms;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Admiralty Day — light theme                                         */
+/* Paper-chart feel: parchment background, dark text, same accent      */
+/* colors as the dark theme (they work on both). Applied when the      */
+/* root has data-theme="light", or when the system prefers light and    */
+/* the user hasn't explicitly chosen dark.                             */
+/* ------------------------------------------------------------------ */
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --color-deep-chart-navy: #f4ecd8; /* Parchment background */
+  --color-chart-table-steel: #ffffff; /* Card surface */
+  --color-wet-ink-blue: #e2ecf6; /* Elevated / hover */
+  --color-admiralty-signal: #1e5fb4; /* Same blue, works on light */
+  --color-starboard-green: #00875a; /* Slightly darker green for contrast */
+  --color-port-red: #d62828; /* Slightly darker red for contrast */
+  --color-signal-amber: #d96e00; /* Slightly darker amber for contrast */
+  --color-fathom-blue: #004e92;
+  --color-fog-grey: #5a6a7a; /* Secondary text on light */
+  --color-sea-spray: #1a2a3a; /* Primary text on light */
+  --color-lantern-gold: #b8860b; /* Slightly darker gold for contrast */
+  --color-arctic-white: #eef2f5; /* Still white for text on accent buttons */
+
+  --color-glass-panel: rgb(255 255 255 / 88%);
+  --color-elevated-card: rgb(255 255 255 / 95%);
+  --color-border-on-glass: rgb(0 0 0 / 8%);
+  --color-border-on-elevated: rgb(0 0 0 / 12%);
+  --color-chart-grid: rgb(0 0 0 / 3%);
+
+  /* In the light theme the space around the globe is a deep
+   * blue-black (the parchment from the chrome would clash with
+   * the white basemap on the sphere). */
+  --color-space-stop-1: #1a2030;
+  --color-space-stop-2: #0a0e1a;
+
+  /* Light-theme equivalents of the small panel overlays. Keep
+   * them translucent and slightly cool so nested surfaces still
+   * read as layered glass instead of grey slabs. */
+  --color-overlay-soft: rgb(255 255 255 / 36%);
+  --color-overlay-mid: rgb(255 255 255 / 48%);
+  --color-overlay-strong: rgb(255 255 255 / 62%);
+  --color-overlay-heavy: rgb(255 255 255 / 76%);
+
+  --shadow-control: 0 2px 10px rgb(15 30 51 / 10%);
+  --shadow-search: 0 6px 18px rgb(15 30 51 / 14%);
+  --shadow-panel: 0 10px 28px rgb(15 30 51 / 18%);
+  --shadow-popover: 0 10px 24px rgb(15 30 51 / 20%);
+
+  --theme-mode: 'light';
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+
+    --color-deep-chart-navy: #f4ecd8;
+    --color-chart-table-steel: #ffffff;
+    --color-wet-ink-blue: #e2ecf6;
+    --color-admiralty-signal: #1e5fb4;
+    --color-starboard-green: #00875a;
+    --color-port-red: #d62828;
+    --color-signal-amber: #d96e00;
+    --color-fathom-blue: #004e92;
+    --color-fog-grey: #5a6a7a;
+    --color-sea-spray: #1a2a3a;
+    --color-lantern-gold: #b8860b;
+    --color-arctic-white: #eef2f5;
+
+    --color-glass-panel: rgb(255 255 255 / 88%);
+    --color-elevated-card: rgb(255 255 255 / 95%);
+    --color-border-on-glass: rgb(0 0 0 / 8%);
+    --color-border-on-elevated: rgb(0 0 0 / 12%);
+    --color-chart-grid: rgb(0 0 0 / 3%);
+
+    --color-space-stop-1: #1a2030;
+    --color-space-stop-2: #0a0e1a;
+
+    --color-overlay-soft: rgb(255 255 255 / 36%);
+    --color-overlay-mid: rgb(255 255 255 / 48%);
+    --color-overlay-strong: rgb(255 255 255 / 62%);
+    --color-overlay-heavy: rgb(255 255 255 / 76%);
+
+    --shadow-control: 0 2px 10px rgb(15 30 51 / 10%);
+    --shadow-search: 0 6px 18px rgb(15 30 51 / 14%);
+    --shadow-panel: 0 10px 28px rgb(15 30 51 / 18%);
+    --shadow-popover: 0 10px 24px rgb(15 30 51 / 20%);
+
+    --theme-mode: 'light';
   }
 }
