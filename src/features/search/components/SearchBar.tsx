@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { searchPorts, suggestCommonDestinations } from '../lib/port-search'
+import {
+  searchPorts,
+  suggestCommonDestinations,
+  suggestOrigins,
+  writeRecentOrigin,
+} from '../lib/port-search'
 import type { PortSearchResult } from '../lib/port-search'
 import type { Port } from '@/types/port'
 import { useMapStore } from '@/store/map'
@@ -82,6 +87,12 @@ export default function SearchBar() {
     return suggestCommonDestinations(originId)
   }, [activeField, destination, originId])
 
+  const suggestedOrigins = useMemo<Port[]>(() => {
+    if (activeField !== 'origin') return []
+    if (origin.trim().length > 0) return []
+    return suggestOrigins()
+  }, [activeField, origin])
+
   useEffect(() => {
     setHighlightIndex(0)
   }, [results])
@@ -115,6 +126,7 @@ export default function SearchBar() {
   const commitSelection = useCallback(
     (port: Port) => {
       if (activeField === 'origin') {
+        writeRecentOrigin(port.id)
         setOriginId(port.id)
         setOrigin(port.name)
         setOriginEditing(false)
@@ -214,11 +226,39 @@ export default function SearchBar() {
       if (e.key === 'ArrowDown') {
         e.preventDefault()
         if (results.length === 0) return
-        setHighlightIndex((i) => Math.min(i + 1, results.length - 1))
+        setHighlightIndex((i) => {
+          let next = i
+          for (let attempt = 0; attempt < results.length; attempt++) {
+            next = next + 1 >= results.length ? 0 : next + 1
+            const r = results[next]
+            if (
+              r &&
+              r.port.id !== originId &&
+              r.port.id !== destinationId &&
+              !waypointIds.includes(r.port.id)
+            )
+              return next
+          }
+          return next
+        })
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
         if (results.length === 0) return
-        setHighlightIndex((i) => Math.max(i - 1, 0))
+        setHighlightIndex((i) => {
+          let next = i
+          for (let attempt = 0; attempt < results.length; attempt++) {
+            next = next - 1 < 0 ? results.length - 1 : next - 1
+            const r = results[next]
+            if (
+              r &&
+              r.port.id !== originId &&
+              r.port.id !== destinationId &&
+              !waypointIds.includes(r.port.id)
+            )
+              return next
+          }
+          return next
+        })
       } else if (e.key === 'Enter') {
         if (activeField !== field) return
         const r = results[highlightIndex]
@@ -260,7 +300,17 @@ export default function SearchBar() {
         }
       }
     },
-    [activeField, highlightIndex, commitSelection, results, originPort, destinationPort],
+    [
+      activeField,
+      highlightIndex,
+      commitSelection,
+      results,
+      originPort,
+      destinationPort,
+      originId,
+      destinationId,
+      waypointIds,
+    ],
   )
 
   const onFocus = useCallback(
@@ -341,6 +391,7 @@ export default function SearchBar() {
           <div className={styles.confirmContent}>
             <span className={styles.confirmName}>{originPort.name}</span>
             <span className={styles.confirmMeta}>
+              {originPort.subdivision ? `${originPort.subdivision} · ` : ''}
               {originPort.country}
               {originPort.region ? ` · ${originPort.region}` : ''}
             </span>
@@ -513,6 +564,7 @@ export default function SearchBar() {
           <div className={styles.confirmContent}>
             <span className={styles.confirmName}>{destinationPort.name}</span>
             <span className={styles.confirmMeta}>
+              {destinationPort.subdivision ? `${destinationPort.subdivision} · ` : ''}
               {destinationPort.country}
               {destinationPort.region ? ` · ${destinationPort.region}` : ''}
             </span>
@@ -594,126 +646,164 @@ export default function SearchBar() {
         </div>
       )}
 
-      {activeField && (results.length > 0 || commonDestinations.length > 0) && (
-        <div className={styles.dropdown} role="listbox">
-          {commonDestinations.length > 0 && (
-            <>
-              <div className={styles.dropdownSectionLabel}>
-                Common from {originPort?.name ?? 'your origin'}
-              </div>
-              {commonDestinations.map((p) => {
-                const isDisabled =
-                  p.id === originId || p.id === destinationId || waypointIds.includes(p.id)
-                return (
-                  <div
-                    key={`common-${p.id}`}
-                    role="option"
-                    aria-selected={false}
-                    aria-disabled={isDisabled}
-                    className={`${styles.result} ${isDisabled ? styles.resultDisabled : ''}`}
-                    onMouseDown={(e) => {
-                      if (isDisabled) return
-                      e.preventDefault()
-                      commitSelection(p)
-                    }}
-                  >
-                    <div className={styles.resultMain}>
-                      <span className={styles.resultName}>{p.name}</span>
-                      <span className={styles.resultCountry}>
-                        {p.country} · {p.region}
-                      </span>
-                    </div>
-                    <div className={styles.resultMeta}>
-                      <span className={styles.sizeBadge} data-size={p.size}>
-                        {p.size}
-                      </span>
-                      {p.unlocode && <span className={styles.unlocode}>{p.unlocode}</span>}
-                    </div>
-                  </div>
-                )
-              })}
-              {results.length > 0 && <div className={styles.dropdownDivider} />}
-            </>
-          )}
-          {results.map((r, i) => {
-            const isDisabled =
-              r.port.id === originId ||
-              r.port.id === destinationId ||
-              waypointIds.includes(r.port.id)
-            return (
-              <div
-                key={r.port.id}
-                role="option"
-                aria-selected={i === highlightIndex}
-                aria-disabled={isDisabled}
-                className={`${styles.result} ${i === highlightIndex ? styles.resultHighlighted : ''} ${
-                  isDisabled ? styles.resultDisabled : ''
-                }`}
-                onMouseDown={(e) => {
-                  if (isDisabled) return
-                  e.preventDefault()
-                  commitSelection(r.port)
-                }}
-                onMouseEnter={() => !isDisabled && setHighlightIndex(i)}
-              >
-                <div className={styles.resultMain}>
-                  <span
-                    className={styles.resultName}
-                    dangerouslySetInnerHTML={{ __html: r.nameHtml }}
-                  />
-                  <span
-                    className={styles.resultCountry}
-                    dangerouslySetInnerHTML={{ __html: r.countryHtml }}
-                  />
-                </div>
-                <div className={styles.resultMeta}>
-                  <button
-                    type="button"
-                    className={styles.detailsButton}
-                    aria-label={`View details for ${r.port.name}`}
-                    onMouseDown={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setViewingPort(r.port.id)
-                      setResults([])
-                      setActiveField(null)
-                      setHighlightIndex(0)
-                    }}
-                  >
-                    <svg
-                      viewBox="0 0 16 16"
-                      width="14"
-                      height="14"
-                      aria-hidden="true"
-                      focusable="false"
+      {activeField &&
+        (results.length > 0 || commonDestinations.length > 0 || suggestedOrigins.length > 0) && (
+          <div className={styles.dropdown} role="listbox">
+            {suggestedOrigins.length > 0 && (
+              <>
+                <div className={styles.dropdownSectionLabel}>Suggested origins</div>
+                {suggestedOrigins.map((p) => {
+                  const isDisabled =
+                    p.id === originId || p.id === destinationId || waypointIds.includes(p.id)
+                  return (
+                    <div
+                      key={`origin-${p.id}`}
+                      role="option"
+                      aria-selected={false}
+                      aria-disabled={isDisabled}
+                      className={`${styles.result} ${isDisabled ? styles.resultDisabled : ''}`}
+                      onMouseDown={(e) => {
+                        if (isDisabled) return
+                        e.preventDefault()
+                        commitSelection(p)
+                      }}
                     >
-                      <circle
-                        cx="8"
-                        cy="8"
-                        r="6.5"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.2"
-                      />
-                      <circle cx="8" cy="5.5" r="0.9" fill="currentColor" />
-                      <path
-                        d="M8 8.5v4"
-                        stroke="currentColor"
-                        strokeWidth="1.4"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
-                  <span className={styles.sizeBadge} data-size={r.port.size}>
-                    {r.port.size}
-                  </span>
-                  {r.port.unlocode && <span className={styles.unlocode}>{r.port.unlocode}</span>}
+                      <div className={styles.resultMain}>
+                        <span className={styles.resultName}>{p.name}</span>
+                        <span className={styles.resultCountry}>
+                          {p.country} · {p.region}
+                        </span>
+                      </div>
+                      <div className={styles.resultMeta}>
+                        <span className={styles.sizeBadge} data-size={p.size}>
+                          {p.size}
+                        </span>
+                        {p.unlocode && <span className={styles.unlocode}>{p.unlocode}</span>}
+                      </div>
+                    </div>
+                  )
+                })}
+                {commonDestinations.length > 0 && <div className={styles.dropdownDivider} />}
+              </>
+            )}
+            {commonDestinations.length > 0 && (
+              <>
+                <div className={styles.dropdownSectionLabel}>
+                  Common from {originPort?.name ?? 'your origin'}
                 </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
+                {commonDestinations.map((p) => {
+                  const isDisabled =
+                    p.id === originId || p.id === destinationId || waypointIds.includes(p.id)
+                  return (
+                    <div
+                      key={`common-${p.id}`}
+                      role="option"
+                      aria-selected={false}
+                      aria-disabled={isDisabled}
+                      className={`${styles.result} ${isDisabled ? styles.resultDisabled : ''}`}
+                      onMouseDown={(e) => {
+                        if (isDisabled) return
+                        e.preventDefault()
+                        commitSelection(p)
+                      }}
+                    >
+                      <div className={styles.resultMain}>
+                        <span className={styles.resultName}>{p.name}</span>
+                        <span className={styles.resultCountry}>
+                          {p.country} · {p.region}
+                        </span>
+                      </div>
+                      <div className={styles.resultMeta}>
+                        <span className={styles.sizeBadge} data-size={p.size}>
+                          {p.size}
+                        </span>
+                        {p.unlocode && <span className={styles.unlocode}>{p.unlocode}</span>}
+                      </div>
+                    </div>
+                  )
+                })}
+                {results.length > 0 && <div className={styles.dropdownDivider} />}
+              </>
+            )}
+            {results.map((r, i) => {
+              const isDisabled =
+                r.port.id === originId ||
+                r.port.id === destinationId ||
+                waypointIds.includes(r.port.id)
+              return (
+                <div
+                  key={r.port.id}
+                  role="option"
+                  aria-selected={i === highlightIndex}
+                  aria-disabled={isDisabled}
+                  className={`${styles.result} ${i === highlightIndex ? styles.resultHighlighted : ''} ${
+                    isDisabled ? styles.resultDisabled : ''
+                  }`}
+                  onMouseDown={(e) => {
+                    if (isDisabled) return
+                    e.preventDefault()
+                    commitSelection(r.port)
+                  }}
+                  onMouseEnter={() => !isDisabled && setHighlightIndex(i)}
+                >
+                  <div className={styles.resultMain}>
+                    <span
+                      className={styles.resultName}
+                      dangerouslySetInnerHTML={{ __html: r.nameHtml }}
+                    />
+                    <span
+                      className={styles.resultCountry}
+                      dangerouslySetInnerHTML={{ __html: r.countryHtml }}
+                    />
+                  </div>
+                  <div className={styles.resultMeta}>
+                    <button
+                      type="button"
+                      className={styles.detailsButton}
+                      aria-label={`View details for ${r.port.name}`}
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setViewingPort(r.port.id)
+                        setResults([])
+                        setActiveField(null)
+                        setHighlightIndex(0)
+                      }}
+                    >
+                      <svg
+                        viewBox="0 0 16 16"
+                        width="14"
+                        height="14"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <circle
+                          cx="8"
+                          cy="8"
+                          r="6.5"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.2"
+                        />
+                        <circle cx="8" cy="5.5" r="0.9" fill="currentColor" />
+                        <path
+                          d="M8 8.5v4"
+                          stroke="currentColor"
+                          strokeWidth="1.4"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
+                    <span className={styles.sizeBadge} data-size={r.port.size}>
+                      {r.port.size}
+                    </span>
+                    {r.port.unlocode && <span className={styles.unlocode}>{r.port.unlocode}</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
 
       {activeField &&
         (() => {

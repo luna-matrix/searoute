@@ -41,12 +41,11 @@
   /* ---------- Theme meta (consumed by deck.gl via lib/* helpers) ---------- */
   --theme-mode: 'dark';
 
-  /* Space color — what's behind the globe in the dark theme. A
-   * soft mid-grey (lighter than the dark basemap) so the sphere
-   * reads as 3D against the background rather than melting into
-   * it. Two stops give a subtle vignette around the globe. */
-  --color-space-stop-1: #2a2e38;
-  --color-space-stop-2: #161a22;
+  /* Space color — what's behind the globe in the dark theme.
+   * Darker than the basemap so the oceans read as lighter, making
+   * the globe sphere stand out against the void. */
+  --color-space-stop-1: #1a1c24;
+  --color-space-stop-2: #0a0b10;
 
   /* Small dark overlays used inside glass panels. These were
    * previously hardcoded `rgb(0 0 0 / x%)` values in component

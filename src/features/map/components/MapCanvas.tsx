@@ -355,6 +355,18 @@ export default function MapCanvas() {
 
   const trace = useRouteTrace(route ? (route as Feature<LineString>) : null)
 
+  const visiblePorts = useMemo(() => {
+    const zoom = currentZoom
+    if (isGlobe) {
+      if (zoom < 0.3) return PORTS.filter((p) => p.size === 'Major')
+      if (zoom < 0.8) return PORTS.filter((p) => p.size === 'Major' || p.size === 'Intermediate')
+      return PORTS
+    }
+    if (zoom < 1.0) return PORTS.filter((p) => p.size === 'Major')
+    if (zoom < 2.5) return PORTS.filter((p) => p.size === 'Major' || p.size === 'Intermediate')
+    return PORTS
+  }, [currentZoom, isGlobe])
+
   /**
    * When a route crosses the dateline its raw coords jump from
    * ~+179 to ~-179.  On the flat Mercator map this creates a
@@ -822,7 +834,7 @@ export default function MapCanvas() {
         : null,
       new ScatterplotLayer<Port>({
         id: 'ports',
-        data: PORTS,
+        data: visiblePorts,
         getPosition: (d) => [d.lng, d.lat],
         getRadius: getPortRadiusPx,
         getFillColor: (d) => portPalette.fill[d.size],
@@ -964,6 +976,7 @@ export default function MapCanvas() {
       destinationId,
       rolePorts,
       alongRoutePorts,
+      visiblePorts,
       mapLabelData,
       portLabelData,
       gridLineData,
@@ -1206,6 +1219,12 @@ export default function MapCanvas() {
         settingsOpen={settingsOpen}
       />
       <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      {!originId && (
+        <div className={styles.welcome}>
+          <span className={styles.welcomeTitle}>Select an origin port to begin</span>
+          <span className={styles.welcomeHint}>Search or click a port on the map</span>
+        </div>
+      )}
     </div>
   )
 }

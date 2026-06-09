@@ -34,6 +34,14 @@ export type PortSize = 'Major' | 'Intermediate' | 'Minor' | 'Small'
 
 export type PortType = 'container' | 'bulk' | 'tanker' | 'roro' | 'general'
 
+export type PortCommodity =
+  | 'palm_oil'
+  | 'biofuel'
+  | 'oleochemical'
+  | 'CPO'
+  | 'edible_oil'
+  | 'chemical'
+
 export type PortRestriction = 'tide' | 'swell' | 'ice' | 'other'
 
 /**
@@ -56,6 +64,10 @@ export interface Port {
   size: PortSize
   /** UN/LOCODE for trade reference. */
   unlocode?: string
+  /** ISO 3166-2 subdivision code. */
+  subdivision?: string
+  /** Commodity tags for trade-flow ranking. */
+  commodities?: PortCommodity[]
   /** Depths in metres. */
   depths: {
     channel?: number

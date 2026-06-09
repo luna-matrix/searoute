@@ -4,7 +4,9 @@ import { PORTS } from '@/data/ports'
 import type { Port } from '@/types/port'
 import { detectTransitPorts } from '@/features/map/lib/transit-detection'
 import { computeVoyageSegments } from '../lib/voyage-segments'
+import type { ReportInput } from '../lib/voyage-report'
 import VoyageTimeline from './VoyageTimeline'
+import ActionBar from './ActionBar'
 import styles from './RoutePanel.module.css'
 
 type Projection = 'globe' | 'flat'
@@ -133,6 +135,39 @@ export default function RoutePanel({
 
   const baselineNm =
     alternatives.length > 0 ? (alternatives[0]?.properties.length ?? distanceNm) : distanceNm
+
+  const reportInput = useMemo<ReportInput | null>(() => {
+    if (!route || !origin || !destination || !segments) return null
+    return {
+      origin,
+      destination,
+      waypoints,
+      route,
+      segments: segments.segments,
+      sectors: segments.sectors,
+      totalNm: segments.totalNm,
+      speedKnots: speed,
+      selectedLabel: isMultiLeg
+        ? `Multi-leg route (${waypoints.length} stops)`
+        : (alternativeLabels[selectedAlternativeIndex] ?? 'Baseline'),
+      alternatives: alternatives.map((alt, i) => ({
+        label: alternativeLabels[i] ?? `Route ${i + 1}`,
+        distanceNm: alt.properties.length,
+        isSelected: i === selectedAlternativeIndex,
+      })),
+    }
+  }, [
+    route,
+    origin,
+    destination,
+    waypoints,
+    segments,
+    speed,
+    alternatives,
+    alternativeLabels,
+    selectedAlternativeIndex,
+    isMultiLeg,
+  ])
 
   const onSelectAlternative = useCallback(
     (i: number) => {
@@ -333,6 +368,8 @@ export default function RoutePanel({
           >
             <VoyageTimeline speedKnots={speed} />
           </Section>
+
+          {reportInput && <ActionBar reportInput={reportInput} />}
         </div>
       )}
     </div>

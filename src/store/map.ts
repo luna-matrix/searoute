@@ -129,7 +129,7 @@ export const useMapStore = create<MapStore>()(
   persist(
     (set) => ({
       selectedPortId: null,
-      originId: null,
+      originId: 'panjang',
       destinationId: null,
       waypoints: [],
       includeLongAlternatives: false,
