@@ -290,42 +290,48 @@ export default function RoutePanel({
           )}
 
           {/* ---- Accordion: Alternatives ---- */}
-          {!isMultiLeg && alternatives.length > 1 && (
+          {!isMultiLeg && alternatives.length > 0 && (
             <Section
               id="alternatives"
               title={`Alternatives (${alternatives.length})`}
               open={openSections.has('alternatives')}
               onToggle={() => toggleSection('alternatives')}
             >
-              <div className={styles.altList}>
-                {alternatives.map((alt, i) => {
-                  const isActive = i === selectedAlternativeIndex
-                  const label = alternativeLabels[i] ?? `Route ${i + 1}`
-                  const altNm = alt.properties.length
-                  const delta = altNm - baselineNm
-                  return (
-                    <button
-                      key={`${label}-${i}`}
-                      type="button"
-                      className={`${styles.altPill} ${isActive ? styles.altPillActive : ''}`}
-                      onClick={() => onSelectAlternative(i)}
-                    >
-                      <span className={styles.altPillIcon}>
-                        {isActive ? '✓' : altNm === baselineNm ? '◦' : '↺'}
-                      </span>
-                      <span className={styles.altPillLabel}>{label}</span>
-                      <span className={styles.altPillNm}>{formatDistance(altNm)} nm</span>
-                      {delta !== 0 && (
-                        <span
-                          className={`${styles.altPillDelta} ${delta > 0 ? styles.altPillDeltaUp : ''}`}
-                        >
-                          {formatDelta(delta)} nm
+              {alternatives.length > 1 ? (
+                <div className={styles.altList}>
+                  {alternatives.map((alt, i) => {
+                    const isActive = i === selectedAlternativeIndex
+                    const label = alternativeLabels[i] ?? `Route ${i + 1}`
+                    const altNm = alt.properties.length
+                    const delta = altNm - baselineNm
+                    return (
+                      <button
+                        key={`${label}-${i}`}
+                        type="button"
+                        className={`${styles.altPill} ${isActive ? styles.altPillActive : ''}`}
+                        onClick={() => onSelectAlternative(i)}
+                      >
+                        <span className={styles.altPillIcon}>
+                          {isActive ? '✓' : altNm === baselineNm ? '◦' : '↺'}
                         </span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
+                        <span className={styles.altPillLabel}>{label}</span>
+                        <span className={styles.altPillNm}>{formatDistance(altNm)} nm</span>
+                        {delta !== 0 && (
+                          <span
+                            className={`${styles.altPillDelta} ${delta > 0 ? styles.altPillDeltaUp : ''}`}
+                          >
+                            {formatDelta(delta)} nm
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className={styles.altEmpty}>
+                  No alternative routes available for this voyage.
+                </div>
+              )}
               <button
                 type="button"
                 className={styles.showLongToggle}

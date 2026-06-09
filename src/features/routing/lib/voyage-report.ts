@@ -31,6 +31,12 @@ function fmtTime(hours: number): string {
   return `${d}d ${h}h`.padStart(9)
 }
 
+function fmtCoord(lat: number, lng: number): string {
+  const latH = lat >= 0 ? 'N' : 'S'
+  const lngH = lng >= 0 ? 'E' : 'W'
+  return `${Math.abs(lat).toFixed(4)}°${latH}  ${Math.abs(lng).toFixed(4)}°${lngH}`
+}
+
 function line(w: number, ch = '-'): string {
   return ch.repeat(w)
 }
@@ -57,6 +63,7 @@ export function generateReport(input: ReportInput): string {
     waypoints,
     route,
     segments,
+    sectors,
     totalNm,
     speedKnots,
     selectedLabel,
@@ -87,6 +94,7 @@ export function generateReport(input: ReportInput): string {
   out.push(
     `Origin:          ${origin.name}, ${origin.country}${origin.unlocode ? ` (${origin.unlocode})` : ''}`,
   )
+  out.push(`                 ${fmtCoord(origin.lat, origin.lng)}`)
   const waypointList = waypoints.map((w) => w.name).join(' → ')
   if (waypointList) {
     out.push(`Via:             ${waypointList}`)
@@ -94,6 +102,7 @@ export function generateReport(input: ReportInput): string {
   out.push(
     `Destination:     ${destination.name}, ${destination.country}${destination.unlocode ? ` (${destination.unlocode})` : ''}`,
   )
+  out.push(`                 ${fmtCoord(destination.lat, destination.lng)}`)
   out.push('')
   out.push(`Route variant:   ${selectedLabel}`)
   out.push(
@@ -146,7 +155,24 @@ export function generateReport(input: ReportInput): string {
   )
   out.push('')
 
-  // ---- 3. Alternative routes ----
+  // ---- Key waypoint coordinates ----
+  out.push(line(W, '-'))
+  out.push('3. WAYPOINT COORDINATES')
+  out.push(line(W, '-'))
+  out.push('')
+  out.push(`Point                                             Latitude       Longitude`)
+  out.push(line(W, '-'))
+  out.push(`${origin.name.padEnd(49)} ${fmtCoord(origin.lat, origin.lng)}`)
+  for (const wp of waypoints) {
+    out.push(`${wp.name.padEnd(49)} ${fmtCoord(wp.lat, wp.lng)}`)
+  }
+  for (const sector of sectors) {
+    out.push(`${sector.name.padEnd(49)} ${fmtCoord(sector.position[1], sector.position[0])}`)
+  }
+  out.push(`${destination.name.padEnd(49)} ${fmtCoord(destination.lat, destination.lng)}`)
+  out.push('')
+
+  // ---- 4. Alternative routes ----
   if (alternatives.length > 1) {
     const baseline = alternatives.find((a) => a.isSelected)?.distanceNm ?? totalNm
     out.push(line(W, '-'))
@@ -166,9 +192,9 @@ export function generateReport(input: ReportInput): string {
     out.push('')
   }
 
-  // ---- 4. Methodology ----
+  // ---- 5. Methodology ----
   out.push(line(W, '-'))
-  out.push('4. METHODOLOGY & ASSUMPTIONS')
+  out.push('5. METHODOLOGY & ASSUMPTIONS')
   out.push(line(W, '-'))
   out.push('')
   out.push(`Routing engine:    searoute-ts v2`)

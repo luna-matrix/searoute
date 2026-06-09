@@ -5,13 +5,10 @@ import type { Port } from '@/types/port'
 /**
  * Fuzzy port search powered by fuzzysort (fzf-style ranking).
  *
- * Custom scoreFn weights port name matches at 3×, country at 1×,
- * UN/LOCODE at 2×, and boosts Major ports by 1.5×, Intermediate
- * by 1.2×.  This ensures major maritime hubs surface above small
- * fishing ports when the query is ambiguous.
- *
- * `threshold: -10000` keeps any non-empty match — we want loose
- * prefix + subsequence matching for a search-by-feel experience.
+ * Searches against port name, country, country aliases, and
+ * UN/LOCODE simultaneously via a concatenated search target.
+ * Major ports get a 1.5× ranking boost; Intermediate get 1.2×.
+ * Commodity-tagged ports (biofuels, oleochemicals) get 1.3×.
  */
 
 const MAX_RESULTS = 12
@@ -23,11 +20,111 @@ const SIZE_BOOST: Record<string, number> = {
   Small: 0.8,
 }
 
+/**
+ * Country alias map — common short codes, abbreviations, and
+ * alternative names.  Expands the search target so "usa",
+ * "america", or "us" all match "United States".
+ */
+const COUNTRY_ALIASES: Record<string, string> = {
+  usa: 'united states',
+  us: 'united states',
+  america: 'united states',
+  uk: 'united kingdom',
+  gb: 'united kingdom',
+  england: 'united kingdom',
+  uae: 'united arab emirates',
+  emirates: 'united arab emirates',
+  prc: 'china',
+  cn: 'china',
+  drc: 'dr congo',
+  sk: 'south korea',
+  rok: 'south korea',
+  korea: 'south korea',
+  nk: 'north korea',
+  dprk: 'north korea',
+  rf: 'russia',
+  holland: 'netherlands',
+  brasil: 'brazil',
+  deutschland: 'germany',
+  italia: 'italy',
+  nippon: 'japan',
+  nipon: 'japan',
+  espana: 'spain',
+  turkiye: 'turkey',
+  indonesia: 'indonesia',
+  id: 'indonesia',
+  malaysia: 'malaysia',
+  my: 'malaysia',
+  singapore: 'singapore',
+  sg: 'singapore',
+  thailand: 'thailand',
+  th: 'thailand',
+  philippines: 'philippines',
+  ph: 'philippines',
+  vietnam: 'vietnam',
+  vn: 'vietnam',
+  australia: 'australia',
+  au: 'australia',
+  'new zealand': 'new zealand',
+  nz: 'new zealand',
+  canada: 'canada',
+  ca: 'canada',
+  mexico: 'mexico',
+  mx: 'mexico',
+  france: 'france',
+  fr: 'france',
+  belgium: 'belgium',
+  be: 'belgium',
+  india: 'india',
+  in: 'india',
+  pakistan: 'pakistan',
+  pk: 'pakistan',
+  bangladesh: 'bangladesh',
+  bd: 'bangladesh',
+  'sri lanka': 'sri lanka',
+  lk: 'sri lanka',
+  egypt: 'egypt',
+  eg: 'egypt',
+  'south africa': 'south africa',
+  za: 'south africa',
+  nigeria: 'nigeria',
+  ng: 'nigeria',
+  kenya: 'kenya',
+  ke: 'kenya',
+  argentina: 'argentina',
+  ar: 'argentina',
+  chile: 'chile',
+  cl: 'chile',
+  peru: 'peru',
+  pe: 'peru',
+  colombia: 'colombia',
+  co: 'colombia',
+  panama: 'panama',
+  pa: 'panama',
+  'saudi arabia': 'saudi arabia',
+  sa: 'saudi arabia',
+  iran: 'iran',
+  ir: 'iran',
+  iraq: 'iraq',
+  iq: 'iraq',
+}
+
+function expandAliases(country: string): string {
+  const lower = country.toLowerCase()
+  return COUNTRY_ALIASES[lower] ?? ''
+}
+
+/** Pre-built search targets for all ports — builds once. */
+const searchTargets = PORTS.map((port) => {
+  const alias = expandAliases(port.country)
+  const searchText = [port.name, port.country, alias, port.unlocode ?? '', port.countryCode]
+    .filter(Boolean)
+    .join(' ')
+  return { port, searchText }
+})
+
 export interface PortSearchResult {
   port: Port
-  /** Pre-rendered HTML with <b> tags around matched characters
-   *  (fuzzysort.highlight escapes source text for us, so this is
-   *  safe to render via dangerouslySetInnerHTML). */
   nameHtml: string
   countryHtml: string
   score: number
@@ -40,13 +137,13 @@ export function searchPorts(query: string): PortSearchResult[] {
   const trimmed = query.trim()
   if (!trimmed) return []
   return fuzzysort
-    .go(trimmed, PORTS, {
-      key: 'name',
+    .go(trimmed, searchTargets, {
+      key: 'searchText',
       limit: MAX_RESULTS * 3,
       threshold: -10000,
     })
     .map((r) => {
-      const port = r.obj
+      const port = r.obj.port
       const sizeBoost = SIZE_BOOST[port.size] ?? 1
       const commodityBoost = (port.commodities?.length ?? 0) > 0 ? 1.3 : 1
       return {
@@ -60,17 +157,6 @@ export function searchPorts(query: string): PortSearchResult[] {
     .slice(0, MAX_RESULTS)
 }
 
-/**
- * Phase 5: "Common destinations" suggestions for a given origin.
- *
- * Resolves the origin's `connections` (a curated list of port ids
- * — common trade partners) to Port objects, in the order the
- * curator wrote them. If the origin has no connections, returns
- * an empty array (caller can fall back to the regular search).
- *
- * Limits to the first 6 partners so the suggestions section
- * stays scannable in the dropdown.
- */
 export function suggestCommonDestinations(originId: string | null): Port[] {
   if (!originId) return []
   const origin = PORTS.find((p) => p.id === originId)
@@ -84,10 +170,6 @@ export function suggestCommonDestinations(originId: string | null): Port[] {
   return out
 }
 
-/**
- * Suggested origin ports — home port, major global hubs, and
- * recently selected origins from localStorage.
- */
 const HUB_ORIGINS = [
   'shanghai',
   'singapore-sg',

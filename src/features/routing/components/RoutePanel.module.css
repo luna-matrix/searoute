@@ -365,6 +365,14 @@
   gap: var(--space-1);
 }
 
+.altEmpty {
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-caption);
+  color: var(--color-fog-grey);
+  font-style: italic;
+  padding: var(--space-2) 0;
+}
+
 .altPill {
   display: flex;
   align-items: center;

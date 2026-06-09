@@ -25,7 +25,7 @@ import type { Port } from '@/types/port'
  * specifically want it (e.g. simulating a Suez closure).
  */
 
-export type CuratedVariantKey = 'baseline' | 'sunda' | 'cape' | 'panama'
+export type CuratedVariantKey = 'baseline' | 'sunda' | 'cape' | 'panama' | 'sunda-cape'
 
 export interface CuratedAlternative {
   key: CuratedVariantKey
@@ -171,6 +171,19 @@ export async function computeCuratedAlternatives(
       key: 'cape',
       label: 'Via Cape of Good Hope',
       restrictions: ['suez', 'babelmandeb'],
+    })
+  }
+  // Double-avoidance: when the baseline uses BOTH Malacca AND Suez,
+  // offer combined Sunda + Cape detour as an emergency option.
+  if (
+    includeLongAlternatives &&
+    hasPassage(baseline, 'malacca') &&
+    (hasPassage(baseline, 'suez') || hasPassage(baseline, 'babelmandeb'))
+  ) {
+    specs.push({
+      key: 'sunda-cape',
+      label: 'Via Sunda + Cape of Good Hope',
+      restrictions: ['malacca', 'suez', 'babelmandeb'],
     })
   }
 

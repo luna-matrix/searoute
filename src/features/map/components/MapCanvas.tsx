@@ -387,30 +387,34 @@ export default function MapCanvas() {
     if (!route) return []
     const coords = (route.geometry as LineString).coordinates as [number, number][]
     if (coords.length < 2) return coords
+    // On the globe, great-circle arcs handle the dateline naturally.
+    // Shifting would create wide arc spans that look like detours.
+    if (isGlobe) return coords
     const lngs = coords.map((c) => c[0])
     if (Math.max(...lngs) - Math.min(...lngs) <= 180) return coords
     return coords.map(([lng, lat]): [number, number] => [lng < 0 ? lng + 360 : lng, lat])
-  }, [route])
+  }, [route, isGlobe])
 
   const traceCoords = useMemo<[number, number][]>(() => {
     if (!trace.active || trace.partialPath.length < 2) return []
+    if (isGlobe) return trace.partialPath as [number, number][]
     const coords = trace.partialPath as [number, number][]
     const lngs = coords.map((c) => c[0])
     if (Math.max(...lngs) - Math.min(...lngs) <= 180) return coords
     return coords.map(([lng, lat]): [number, number] => [lng < 0 ? lng + 360 : lng, lat])
-  }, [trace.partialPath, trace.active])
+  }, [trace.partialPath, trace.active, isGlobe])
 
   const traceHead = useMemo<[number, number] | null>(() => {
     if (!trace.head) return null
+    if (isGlobe) return trace.head as [number, number]
     const [lng, lat] = trace.head
     if (lng >= 0 || datelineShiftedRoute.length === 0) return [lng, lat] as [number, number]
-    const shifted = datelineShiftedRoute
-    const shiftedLngs = shifted.map((c) => c[0])
+    const shiftedLngs = datelineShiftedRoute.map((c) => c[0])
     if (shiftedLngs.length === 0) return [lng, lat] as [number, number]
     if (Math.max(...shiftedLngs) - Math.min(...shiftedLngs) <= 180)
       return [lng, lat] as [number, number]
     return [lng + 360, lat] as [number, number]
-  }, [trace.head, datelineShiftedRoute])
+  }, [trace.head, datelineShiftedRoute, isGlobe])
 
   const continentRings = useMemo(() => {
     if (!continents) return null
