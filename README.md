@@ -70,7 +70,7 @@ npm run validate:data  # validate port dataset JSON
 
 - **Port detail sheet** — depths, max vessel dimensions, restrictions, region, UN/LOCODE
 - **Port detail popover** — hover on map marker for quick info + Set as Origin/Destination/Waypoint
-- **328-port dataset** with Major/Intermediate/Minor sizes
+- **1,384-port dataset** with Major/Intermediate/Minor sizes
 
 ### Reports & Export
 
@@ -197,8 +197,8 @@ Route port labels (computeAllRoutePortLabels):
 | ---------------------- | ----------- | ---------------------------------- |
 | TTI                    | < 3s        | ✓                                  |
 | FCP                    | < 1.5s      | ✓                                  |
-| Initial JS (gzip)      | < 1 MB      | ✓ (370 KB)                         |
-| Total JS (gzip)        | < 4 MB      | ✓ (535 KB)                         |
+| Initial JS (gzip)      | < 1 MB      | ✓ (374 KB)                         |
+| Total JS (gzip)        | < 4 MB      | ✓ (539 KB)                         |
 | Port search            | < 100ms     | ✓ (fuzzysort, 1,384 ports)         |
 | Route compute          | < 1s        | ✓ (searoute-ts Dijkstra)           |
 | Transit port detection | < 500ms     | ✓ (haversine + land-crossing)      |
