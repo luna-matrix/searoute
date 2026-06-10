@@ -391,7 +391,6 @@ export default function SearchBar() {
           <div className={styles.confirmContent}>
             <span className={styles.confirmName}>{originPort.name}</span>
             <span className={styles.confirmMeta}>
-              {originPort.subdivision ? `${originPort.subdivision} · ` : ''}
               {originPort.country}
               {originPort.region ? ` · ${originPort.region}` : ''}
             </span>
@@ -494,7 +493,6 @@ export default function SearchBar() {
             <span className={styles.confirmMeta}>
               {wp.country}
               {wp.region ? ` · ${wp.region}` : ''}
-              {wp.unlocode ? ` · ${wp.unlocode}` : ''} · {wp.size}
             </span>
           </div>
           <button
@@ -566,7 +564,6 @@ export default function SearchBar() {
           <div className={styles.confirmContent}>
             <span className={styles.confirmName}>{destinationPort.name}</span>
             <span className={styles.confirmMeta}>
-              {destinationPort.subdivision ? `${destinationPort.subdivision} · ` : ''}
               {destinationPort.country}
               {destinationPort.region ? ` · ${destinationPort.region}` : ''}
             </span>
@@ -802,7 +799,6 @@ export default function SearchBar() {
                     <span className={styles.sizeBadge} data-size={r.port.size}>
                       {r.port.size}
                     </span>
-                    {r.port.unlocode && <span className={styles.unlocode}>{r.port.unlocode}</span>}
                   </div>
                 </div>
               )
