@@ -6,15 +6,44 @@
   will-change: transform;
 }
 
+/* Role-based color via CSS custom property. The dot, rings, and
+ * water ripple all reference this so a single data-role change
+ * recolors the entire marker. */
+.marker[data-role='origin'] {
+  --marker-color: var(--color-starboard-green);
+}
+.marker[data-role='destination'] {
+  --marker-color: var(--color-port-red);
+}
+.marker[data-role='neutral'] {
+  --marker-color: var(--color-admiralty-signal);
+}
+
 .dot {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background-color: var(--color-starboard-green);
+  background-color: var(--marker-color, var(--color-starboard-green));
   border: 2px solid var(--color-arctic-white);
-  box-shadow: 0 0 16px var(--color-starboard-green);
+  box-shadow: 0 0 16px var(--marker-color, var(--color-starboard-green));
   position: relative;
   z-index: 2;
+  /* Scale up briefly on appearance for a "landing" feel */
+  animation: dotLand 400ms var(--ease-out) both;
+}
+
+@keyframes dotLand {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  60% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .ring {
@@ -24,7 +53,7 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 2px solid var(--color-starboard-green);
+  border: 2px solid var(--marker-color, var(--color-starboard-green));
   transform: translate(-50%, -50%);
   animation: portPulse 1.5s var(--ease-out) infinite;
   z-index: 1;
@@ -34,6 +63,22 @@
   animation-delay: 0.75s;
 }
 
+/* Slow water-ripple ring — wider, more diffuse, fades slower.
+ * Creates a "pin dropped in water" effect that sits behind
+ * the tighter pulse rings. */
+.waterRipple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--marker-color, var(--color-starboard-green));
+  transform: translate(-50%, -50%);
+  animation: waterRipple 2.4s var(--ease-out) infinite;
+  z-index: 0;
+}
+
 @keyframes portPulse {
   0% {
     transform: translate(-50%, -50%) scale(1);
@@ -41,6 +86,17 @@
   }
   100% {
     transform: translate(-50%, -50%) scale(3.5);
+    opacity: 0;
+  }
+}
+
+@keyframes waterRipple {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(5);
     opacity: 0;
   }
 }

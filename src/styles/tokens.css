@@ -149,7 +149,7 @@
   --color-admiralty-signal: #1e5fb4; /* Same blue, works on light */
   --color-starboard-green: #00875a; /* Slightly darker green for contrast */
   --color-port-red: #d62828; /* Slightly darker red for contrast */
-  --color-signal-amber: #d96e00; /* Slightly darker amber for contrast */
+  --color-signal-amber: #b35700; /* Slightly darker amber for contrast on parchment */
   --color-fathom-blue: #004e92;
   --color-fog-grey: #5a6a7a; /* Secondary text on light */
   --color-sea-spray: #1a2a3a; /* Primary text on light */
@@ -162,11 +162,10 @@
   --color-border-on-elevated: rgb(0 0 0 / 12%);
   --color-chart-grid: rgb(0 0 0 / 3%);
 
-  /* In the light theme the space around the globe is a deep
-   * blue-black (the parchment from the chrome would clash with
-   * the white basemap on the sphere). */
-  --color-space-stop-1: #1a2030;
-  --color-space-stop-2: #0a0e1a;
+  /* Light theme: warm parchment-toned space around the globe.
+   * Complements the Carto light_all tiles and the parchment UI. */
+  --color-space-stop-1: #e8e0d4;
+  --color-space-stop-2: #d0c8bc;
 
   /* Light-theme equivalents of the small panel overlays. Keep
    * them translucent and slightly cool so nested surfaces still
@@ -194,7 +193,7 @@
     --color-admiralty-signal: #1e5fb4;
     --color-starboard-green: #00875a;
     --color-port-red: #d62828;
-    --color-signal-amber: #d96e00;
+    --color-signal-amber: #b35700;
     --color-fathom-blue: #004e92;
     --color-fog-grey: #5a6a7a;
     --color-sea-spray: #1a2a3a;
@@ -207,8 +206,8 @@
     --color-border-on-elevated: rgb(0 0 0 / 12%);
     --color-chart-grid: rgb(0 0 0 / 3%);
 
-    --color-space-stop-1: #1a2030;
-    --color-space-stop-2: #0a0e1a;
+    --color-space-stop-1: #e8e0d4;
+    --color-space-stop-2: #d0c8bc;
 
     --color-overlay-soft: rgb(255 255 255 / 36%);
     --color-overlay-mid: rgb(255 255 255 / 48%);

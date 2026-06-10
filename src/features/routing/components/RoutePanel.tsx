@@ -5,12 +5,11 @@ import type { Port } from '@/types/port'
 import { detectTransitPorts } from '@/features/map/lib/transit-detection'
 import { computeVoyageSegments } from '../lib/voyage-segments'
 import type { ReportInput } from '../lib/voyage-report'
-import VoyageTimeline from './VoyageTimeline'
 import ActionBar from './ActionBar'
 import styles from './RoutePanel.module.css'
 
 type Projection = 'globe' | 'flat'
-type SectionId = 'overview' | 'breakdown' | 'alternatives' | 'map' | 'speed'
+type SectionId = 'voyage' | 'alternatives' | 'speed'
 
 const DEFAULT_SPEED_KNOTS = 19
 const SNAP_POINTS = [12, 15, 19, 22, 25] as const
@@ -111,7 +110,7 @@ export default function RoutePanel({
 
   const [speed, setSpeed] = useState<number>(DEFAULT_SPEED_KNOTS)
   const [openSections, setOpenSections] = useState<Set<SectionId>>(
-    () => new Set<SectionId>(['breakdown', 'alternatives', 'map']),
+    () => new Set<SectionId>(['voyage', 'alternatives']),
   )
 
   const origin = originId ? PORTS.find((p) => p.id === originId) : undefined
@@ -169,6 +168,9 @@ export default function RoutePanel({
     isMultiLeg,
   ])
 
+  const alongRoutePorts = useMapStore((s) => s.alongRoutePorts)
+  const majorCount = alongRoutePorts.filter((p) => p.size === 'Major').length
+
   const onSelectAlternative = useCallback(
     (i: number) => {
       const newRoute = alternatives[i]
@@ -210,45 +212,50 @@ export default function RoutePanel({
 
       {route && origin && destination && (
         <div className={styles.body}>
-          {/* ---- Header ---- */}
-          <div className={styles.header}>
-            <div className={styles.headerTitle}>Voyage</div>
-            <div className={styles.headerMeta}>
-              <span className={styles.headerChip}>{isMultiLeg ? 'Multi-leg' : 'Direct'}</span>
-              <span className={styles.headerChip}>{projection === 'globe' ? 'Globe' : 'Flat'}</span>
+          {/* ---- Sticky hero block: header + route + distance ---- */}
+          <div className={styles.stickyHero}>
+            {/* ---- Header ---- */}
+            <div className={styles.header}>
+              <div className={styles.headerTitle}>Voyage</div>
+              <div className={styles.headerMeta}>
+                <span className={styles.headerChip}>{isMultiLeg ? 'Multi-leg' : 'Direct'}</span>
+                <span className={styles.headerChip}>
+                  {projection === 'globe' ? 'Globe' : 'Flat'}
+                </span>
+              </div>
             </div>
-          </div>
 
-          {/* ---- Route line ---- */}
-          <div className={styles.routeRow}>
-            <span>
-              <span className={`${styles.dot} ${styles.dotOrigin}`} />
-              <span className={styles.portName}>{origin.name}</span>
-            </span>
-            {waypoints.map((wp) => (
-              <span key={wp.id} className={styles.routeSeg}>
-                <span className={styles.routeArrow}>→</span>
-                <span className={`${styles.dot} ${styles.dotWaypoint}`} />
-                <span className={styles.portName}>{wp.name}</span>
+            {/* ---- Route line ---- */}
+            <div className={styles.routeRow}>
+              <span>
+                <span className={`${styles.dot} ${styles.dotOrigin}`} />
+                <span className={styles.portName}>{origin.name}</span>
               </span>
-            ))}
-            <span className={styles.routeSeg}>
-              <span className={styles.routeArrow}>→</span>
-              <span className={`${styles.dot} ${styles.dotDestination}`} />
-              <span className={styles.portName}>{destination.name}</span>
-            </span>
-          </div>
+              {waypoints.map((wp) => (
+                <span key={wp.id} className={styles.routeSeg}>
+                  <span className={styles.routeArrow}>→</span>
+                  <span className={`${styles.dot} ${styles.dotWaypoint}`} />
+                  <span className={styles.portName}>{wp.name}</span>
+                </span>
+              ))}
+              <span className={styles.routeSeg}>
+                <span className={styles.routeArrow}>→</span>
+                <span className={`${styles.dot} ${styles.dotDestination}`} />
+                <span className={styles.portName}>{destination.name}</span>
+              </span>
+            </div>
 
-          {/* ---- Hero ---- */}
-          <div className={styles.hero}>
-            <span className={styles.heroValue}>{formatDistance(animatedDistance)}</span>
-            <span className={styles.heroUnit}>nm</span>
-          </div>
-          <div className={styles.heroKm}>{formatDistance(animatedDistance * KM_PER_NM)} km</div>
-          <div className={styles.subline}>
-            <span className={styles.sublineLabel}>Sailing time @ {speed} kn</span>
-            <span>·</span>
-            <span>{formatSailingTime(timeHours)}</span>
+            {/* ---- Hero ---- */}
+            <div className={styles.hero}>
+              <span className={styles.heroValue}>{formatDistance(animatedDistance)}</span>
+              <span className={styles.heroUnit}>nm</span>
+            </div>
+            <div className={styles.heroKm}>{formatDistance(animatedDistance * KM_PER_NM)} km</div>
+            <div className={styles.subline}>
+              <span className={styles.sublineLabel}>Sailing time @ {speed} kn</span>
+              <span>·</span>
+              <span>{formatSailingTime(timeHours)}</span>
+            </div>
           </div>
 
           {/* ---- Speed pills ---- */}
@@ -266,26 +273,41 @@ export default function RoutePanel({
             ))}
           </div>
 
-          {/* ---- Accordion: Breakdown ---- */}
+          {/* ---- Accordion: Voyage (combined breakdown + timeline) ---- */}
           {segments && segments.segments.length > 0 && (
             <Section
-              id="breakdown"
-              title="Route Breakdown"
-              open={openSections.has('breakdown')}
-              onToggle={() => toggleSection('breakdown')}
+              id="voyage"
+              title="Voyage"
+              open={openSections.has('voyage')}
+              onToggle={() => toggleSection('voyage')}
             >
-              <div className={styles.breakdown}>
+              <div className={styles.voyageList}>
                 {segments.segments.map((seg, i) => (
-                  <div key={i} className={styles.breakdownRow}>
-                    <span className={styles.breakdownLabel}>{seg.label}</span>
-                    <span className={styles.breakdownDist}>
-                      {formatDistance(seg.distanceNm)} nm
-                    </span>
-                    <span className={styles.breakdownTime}>{formatSailingTime(seg.timeHours)}</span>
-                    <span className={styles.breakdownPct}>{seg.percentage}%</span>
+                  <div key={i} className={styles.voyageRow}>
+                    <div className={styles.voyageGutter}>
+                      <div
+                        className={`${styles.voyageDot} ${
+                          i === 0
+                            ? styles.voyageDotOrigin
+                            : i === segments.segments.length - 1
+                              ? styles.voyageDotDestination
+                              : styles.voyageDotChokepoint
+                        }`}
+                      />
+                      {i < segments.segments.length - 1 && <div className={styles.voyageLine} />}
+                    </div>
+                    <span className={styles.voyageLabel}>{seg.label}</span>
+                    <span className={styles.voyageDist}>{formatDistance(seg.distanceNm)} nm</span>
+                    <span className={styles.voyageTime}>{formatSailingTime(seg.timeHours)}</span>
+                    <span className={styles.voyagePct}>{seg.percentage}%</span>
                   </div>
                 ))}
               </div>
+              {majorCount > 0 && (
+                <div className={styles.voyageSummary}>
+                  via {majorCount} major {majorCount === 1 ? 'port' : 'ports'} along the route
+                </div>
+              )}
             </Section>
           )}
 
@@ -363,16 +385,6 @@ export default function RoutePanel({
               />
               <div className={styles.speedValue}>{speed} kn</div>
             </div>
-          </Section>
-
-          {/* ---- Timeline ---- */}
-          <Section
-            id="map"
-            title="Voyage Map"
-            open={openSections.has('map')}
-            onToggle={() => toggleSection('map')}
-          >
-            <VoyageTimeline speedKnots={speed} />
           </Section>
 
           {reportInput && <ActionBar reportInput={reportInput} />}

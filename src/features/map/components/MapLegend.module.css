@@ -1,6 +1,9 @@
 .legend {
   width: 188px;
   background-color: var(--color-glass-panel);
+  background-image:
+    repeating-linear-gradient(0deg, var(--color-chart-grid) 0 1px, transparent 1px 20px),
+    repeating-linear-gradient(90deg, var(--color-chart-grid) 0 1px, transparent 1px 20px);
   backdrop-filter: blur(var(--blur-glass)) saturate(140%);
   -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(140%);
   border: 1px solid var(--color-border-on-glass);

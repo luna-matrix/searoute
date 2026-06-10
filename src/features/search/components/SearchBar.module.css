@@ -8,6 +8,9 @@
   display: flex;
   flex-direction: column;
   background-color: var(--color-glass-panel);
+  background-image:
+    repeating-linear-gradient(0deg, var(--color-chart-grid) 0 1px, transparent 1px 20px),
+    repeating-linear-gradient(90deg, var(--color-chart-grid) 0 1px, transparent 1px 20px);
   backdrop-filter: blur(var(--blur-glass)) saturate(140%);
   -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(140%);
   border: 1px solid var(--color-border-on-glass);
@@ -96,7 +99,7 @@
 
 .confirmEditIcon:hover {
   background-color: var(--color-chart-table-steel);
-  color: var(--color-arctic-white);
+  color: var(--color-sea-spray);
 }
 
 .divider {
@@ -132,7 +135,7 @@
 .swapButton:hover:not([disabled]) {
   background-color: var(--color-wet-ink-blue);
   border-color: var(--color-admiralty-signal);
-  color: var(--color-arctic-white);
+  color: var(--color-sea-spray);
 }
 
 .swapButton:focus-visible {
@@ -220,7 +223,7 @@
 .addStopButton:hover {
   background-color: var(--color-wet-ink-blue);
   border-color: var(--color-admiralty-signal);
-  color: var(--color-arctic-white);
+  color: var(--color-sea-spray);
   border-style: solid;
 }
 
@@ -270,7 +273,7 @@
 
 .clearButton:hover {
   background-color: var(--color-chart-table-steel);
-  color: var(--color-arctic-white);
+  color: var(--color-sea-spray);
 }
 
 .clearButton:focus-visible {
@@ -287,11 +290,14 @@
   max-height: 360px;
   overflow-y: auto;
   background-color: var(--color-elevated-card);
+  background-image:
+    repeating-linear-gradient(0deg, var(--color-chart-grid) 0 1px, transparent 1px 20px),
+    repeating-linear-gradient(90deg, var(--color-chart-grid) 0 1px, transparent 1px 20px);
   backdrop-filter: blur(var(--blur-glass)) saturate(140%);
   -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(140%);
   border: 1px solid var(--color-border-on-elevated);
   border-radius: var(--radius-md);
-  box-shadow: 0 8px 32px rgb(0 0 0 / 45%);
+  box-shadow: var(--shadow-popover);
 }
 
 .result {
@@ -303,6 +309,18 @@
   cursor: pointer;
   border-bottom: 1px solid var(--color-border-on-glass);
   transition: background-color var(--duration-quick) var(--ease-out);
+  animation: resultStagger 180ms var(--ease-out) both;
+}
+
+@keyframes resultStagger {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .result:last-child {
@@ -438,7 +456,7 @@
 .detailsButton:hover {
   background-color: var(--color-admiralty-signal);
   border-color: var(--color-admiralty-signal);
-  color: var(--color-arctic-white);
+  color: var(--color-sea-spray);
 }
 
 .detailsButton:focus-visible {

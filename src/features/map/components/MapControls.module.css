@@ -8,6 +8,9 @@
   display: flex;
   flex-direction: column;
   background-color: var(--color-glass-panel);
+  background-image:
+    repeating-linear-gradient(0deg, var(--color-chart-grid) 0 1px, transparent 1px 20px),
+    repeating-linear-gradient(90deg, var(--color-chart-grid) 0 1px, transparent 1px 20px);
   backdrop-filter: blur(var(--blur-glass)) saturate(140%);
   -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(140%);
   border: 1px solid var(--color-border-on-glass);
@@ -45,7 +48,7 @@
 
 .choiceButton:hover {
   background-color: var(--color-wet-ink-blue);
-  color: var(--color-arctic-white);
+  color: var(--color-sea-spray);
 }
 
 .choiceButton:focus-visible {
@@ -55,7 +58,7 @@
 
 .choiceButtonActive {
   background-color: var(--color-admiralty-signal);
-  color: var(--color-arctic-white);
+  color: var(--color-sea-spray);
 }
 
 .button {
@@ -76,12 +79,12 @@
 
 .button:hover {
   background-color: var(--color-wet-ink-blue);
-  color: var(--color-arctic-white);
+  color: var(--color-sea-spray);
 }
 
 .button:active {
   background-color: var(--color-admiralty-signal);
-  color: var(--color-arctic-white);
+  color: var(--color-sea-spray);
 }
 
 .button:focus-visible {
@@ -91,7 +94,7 @@
 
 .buttonActive {
   background-color: var(--color-admiralty-signal);
-  color: var(--color-arctic-white);
+  color: var(--color-sea-spray);
 }
 
 .button + .button {

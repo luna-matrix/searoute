@@ -18,16 +18,23 @@ interface PortMarkerProps {
  * currently-selected port. Position is computed by projecting the
  * port's lat/lng into screen pixels via WebMercatorViewport.
  *
- * Two concentric rings pulse outward with a 0.75s phase offset so
- * the ripple feels continuous. Animations are CSS keyframes that
- * honour prefers-reduced-motion (the duration tokens are zeroed
- * in tokens.css under that media query).
+ * The dot color reflects the port's role: green for origin, red
+ * for destination. Two concentric rings pulse outward with a
+ * 0.75s phase offset, plus a slower water-ripple ring.
+ * Animations are CSS keyframes that honour prefers-reduced-motion
+ * (the duration tokens are zeroed in tokens.css under that media
+ * query).
  */
 export default function PortMarker({ viewState, width, height, isGlobe }: PortMarkerProps) {
   const selectedPortId = useMapStore((s) => s.selectedPortId)
+  const originId = useMapStore((s) => s.originId)
+  const destinationId = useMapStore((s) => s.destinationId)
   const port: Port | undefined = selectedPortId
     ? PORTS.find((p) => p.id === selectedPortId)
     : undefined
+
+  const role: 'origin' | 'destination' | 'neutral' =
+    port?.id === originId ? 'origin' : port?.id === destinationId ? 'destination' : 'neutral'
 
   const [screen, setScreen] = useState<{ x: number; y: number } | null>(null)
 
@@ -52,7 +59,8 @@ export default function PortMarker({ viewState, width, height, isGlobe }: PortMa
   if (!port || !screen || isGlobe) return null
 
   return (
-    <div className={styles.marker} style={{ left: screen.x, top: screen.y }}>
+    <div className={styles.marker} style={{ left: screen.x, top: screen.y }} data-role={role}>
+      <div className={styles.waterRipple} />
       <div className={styles.ring} />
       <div className={styles.ring} />
       <div className={styles.dot} />

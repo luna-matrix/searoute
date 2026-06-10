@@ -4,6 +4,19 @@ import type { Port } from '@/types/port'
 import { useMapStore } from '@/store/map'
 import styles from './PortDetailSheet.module.css'
 
+const BackIcon = () => (
+  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+    <path
+      d="M10 3L5 8l5 5"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+  </svg>
+)
+
 const CloseIcon = () => (
   <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
     <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -38,6 +51,8 @@ export default function PortDetailSheet() {
   const isDestination = port?.id === destinationId
 
   const onClose = useCallback(() => setViewingPort(null), [setViewingPort])
+
+  const hasRoute = Boolean(originId && destinationId)
 
   const onSetOrigin = useCallback(() => {
     if (!port) return
@@ -94,6 +109,18 @@ export default function PortDetailSheet() {
                 {port.size}
               </span>
               {port.unlocode && <span className={styles.unlocode}>{port.unlocode}</span>}
+              {hasRoute && (
+                <button
+                  type="button"
+                  className={styles.backButton}
+                  aria-label="Back to route"
+                  onClick={onClose}
+                  title="Back to route"
+                >
+                  <BackIcon />
+                  <span>Route</span>
+                </button>
+              )}
               <button
                 ref={closeButtonRef}
                 type="button"

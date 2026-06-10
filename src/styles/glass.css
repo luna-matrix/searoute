@@ -1,6 +1,14 @@
-/* Glass surface utility. See PLAN.md "Surfaces". */
+/* Glass surface utility. See PLAN.md "Surfaces".
+ *
+ * The chart-grid texture is a subtle cross-hatch behind the
+ * glass — two repeating-linear-gradients at 20px intervals
+ * using the --color-chart-grid token. It sits behind the
+ * content (via background-color) so text remains readable. */
 .glass {
   background-color: var(--color-glass-panel);
+  background-image:
+    repeating-linear-gradient(0deg, var(--color-chart-grid) 0 1px, transparent 1px 20px),
+    repeating-linear-gradient(90deg, var(--color-chart-grid) 0 1px, transparent 1px 20px);
   backdrop-filter: blur(var(--blur-glass)) saturate(140%);
   -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(140%);
   border: 1px solid var(--color-border-on-glass);
@@ -9,6 +17,9 @@
 
 .glass--elevated {
   background-color: var(--color-elevated-card);
+  background-image:
+    repeating-linear-gradient(0deg, var(--color-chart-grid) 0 1px, transparent 1px 20px),
+    repeating-linear-gradient(90deg, var(--color-chart-grid) 0 1px, transparent 1px 20px);
   backdrop-filter: blur(var(--blur-elevated)) saturate(140%);
   -webkit-backdrop-filter: blur(var(--blur-elevated)) saturate(140%);
   border: 1px solid var(--color-border-on-elevated);

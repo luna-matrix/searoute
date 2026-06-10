@@ -3,12 +3,15 @@
   right: var(--space-4);
   top: var(--space-4);
   bottom: var(--space-4);
-  z-index: var(--z-panel);
-  width: 360px;
+  z-index: var(--z-panel-overlay);
+  width: 400px;
   max-width: calc(100% - var(--space-4) * 2);
   display: flex;
   flex-direction: column;
   background-color: var(--color-glass-panel);
+  background-image:
+    repeating-linear-gradient(0deg, var(--color-chart-grid) 0 1px, transparent 1px 20px),
+    repeating-linear-gradient(90deg, var(--color-chart-grid) 0 1px, transparent 1px 20px);
   backdrop-filter: blur(var(--blur-glass)) saturate(140%);
   -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(140%);
   border: 1px solid var(--color-border-on-glass);
@@ -31,7 +34,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-4);
   border-bottom: 1px solid var(--color-border-on-glass);
 }
 
@@ -46,7 +49,7 @@
   font-family: var(--font-family-ui);
   font-size: var(--font-size-heading-1);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-arctic-white);
+  color: var(--color-sea-spray);
   line-height: var(--line-height-tight);
 }
 
@@ -116,7 +119,7 @@
 
 .closeButton:hover {
   background-color: var(--color-wet-ink-blue);
-  color: var(--color-arctic-white);
+  color: var(--color-sea-spray);
 }
 
 .closeButton:focus-visible {
@@ -124,8 +127,35 @@
   outline-offset: 1px;
 }
 
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  background: transparent;
+  border: 1px solid var(--color-border-on-glass);
+  border-radius: var(--radius-sm);
+  color: var(--color-fog-grey);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-caption);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-quick) var(--ease-out),
+    color var(--duration-quick) var(--ease-out);
+}
+
+.backButton:hover {
+  background-color: var(--color-wet-ink-blue);
+  color: var(--color-arctic-white);
+}
+
+.backButton:focus-visible {
+  outline: 2px solid var(--color-admiralty-signal);
+  outline-offset: 1px;
+}
+
 .body {
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-4);
   overflow-y: auto;
   overscroll-behavior: contain;
   display: flex;
@@ -205,7 +235,7 @@
 .actions {
   display: flex;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-5);
+  padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--color-border-on-glass);
   background-color: var(--color-overlay-mid);
 }

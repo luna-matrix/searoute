@@ -20,28 +20,33 @@ import type { BasemapId } from '../lib/basemaps'
 import {
   getPortRadiusPx,
   getRoleFill,
-  ROLE_RING,
+  getRoleRing,
+  getWaypointRing,
+  getTransitRing,
+  getTransitFill,
   ROLE_RADIUS_PX,
   ROLE_RING_WIDTH_PX,
   WAYPOINT_FILL,
-  WAYPOINT_RING,
   WAYPOINT_RADIUS_PX,
   WAYPOINT_RING_WIDTH_PX,
-  TRANSIT_PORT_FILL,
-  TRANSIT_PORT_RING,
   TRANSIT_PORT_RADIUS_PX,
 } from '../lib/port-styles'
 import { getPortPalette } from '../lib/port-styles'
 import { useTheme } from '../hooks/useTheme'
-import { getLaneLineColor, getLaneLineWidth } from '../lib/shipping-lane-styles'
+import { getLaneLineColor, getLaneLineWidth, setLaneTheme } from '../lib/shipping-lane-styles'
 import {
   getRouteLineColor,
-  ROUTE_TRACE_COLOR,
+  getRouteTraceColor,
   ROUTE_TRACE_WIDTH_PX,
   ROUTE_TRACE_HEAD_COLOR,
-  ROUTE_TRACE_HEAD_RING,
+  getRouteTraceHeadRing,
   ROUTE_TRACE_HEAD_RADIUS_PX,
   ROUTE_TRACE_HEAD_RING_WIDTH_PX,
+  getRouteLabelOutline,
+  getRouteLabelBg,
+  ROUTE_LABEL_FONT,
+  ROUTE_LABEL_OUTLINE_WIDTH,
+  computeRouteDistanceLabels,
 } from '../lib/route-styles'
 import { useRouteTrace } from '@/features/routing/lib/route-trace'
 import { getReferenceLineData, type ReferenceLineData } from '../lib/reference-lines'
@@ -52,7 +57,7 @@ import type { LabelCategory } from '@/data/map-labels'
 import { seaRouteMulti, NoRouteError, SnapFailedError, type SeaRouteFeature } from '@/lib/searoute'
 import { detectTransitPorts } from '../lib/transit-detection'
 import { extractContinentRings } from '../lib/point-in-polygon'
-import { computeMapLabels, computePortLabels } from '../lib/label-engine'
+import { computeMapLabels, computeAllRoutePortLabels } from '../lib/label-engine'
 import { computeGridLines } from '../lib/grid-lines'
 import { computeCuratedAlternatives } from '@/features/routing/lib/curated-alternatives'
 import CompassRose from './CompassRose'
@@ -198,7 +203,17 @@ export default function MapCanvas() {
     pitch: 0,
     bearing: 0,
   })
-  const [basemapId, setBasemapId] = useState<BasemapId>('dark')
+  const [basemapId, setBasemapId] = useState<BasemapId>(() => {
+    try {
+      const stored = window.localStorage.getItem('searoute-theme')
+      const isLight =
+        stored === 'light' ||
+        (stored !== 'dark' && window.matchMedia('(prefers-color-scheme: light)').matches)
+      return isLight ? 'light' : 'dark'
+    } catch {
+      return 'dark'
+    }
+  })
   const basemap = BASEMAPS[basemapId]
   const [hover, setHover] = useState<HoverState | null>(null)
   /** Grace-period dismiss timer: when the mouse leaves a port, the
@@ -259,6 +274,33 @@ export default function MapCanvas() {
   const mapLayerSettings = useMapStore((s) => s.mapLayers)
   const routeDisplaySettings = useMapStore((s) => s.routeDisplay)
 
+  // Transit port bloom stagger: progressively reveals transit
+  // ports along the route with a 100ms delay between each.
+  const [transitBloomCount, setTransitBloomCount] = useState(0)
+  const prevAlongRoutePortsRef = useRef<string>('')
+
+  useEffect(() => {
+    const key = alongRoutePorts.map((p) => p.id).join(',')
+    if (key === prevAlongRoutePortsRef.current) return
+    prevAlongRoutePortsRef.current = key
+
+    const prefersReduced =
+      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReduced || alongRoutePorts.length === 0) {
+      setTransitBloomCount(alongRoutePorts.length)
+      return
+    }
+
+    setTransitBloomCount(0)
+    let count = 0
+    const interval = setInterval(() => {
+      count++
+      setTransitBloomCount(count)
+      if (count >= alongRoutePorts.length) clearInterval(interval)
+    }, 100)
+    return () => clearInterval(interval)
+  }, [alongRoutePorts])
+
   const cancelDismiss = useCallback(() => {
     if (dismissTimerRef.current !== null) {
       clearTimeout(dismissTimerRef.current)
@@ -316,6 +358,7 @@ export default function MapCanvas() {
       zoom: currentZoom,
       isGlobe,
       canvasSize,
+      theme,
     }),
     [
       labelPalette,
@@ -325,6 +368,7 @@ export default function MapCanvas() {
       currentZoom,
       isGlobe,
       canvasSize,
+      theme,
     ],
   )
 
@@ -343,10 +387,21 @@ export default function MapCanvas() {
     [engineOpts, activeCategories],
   )
 
-  const portLabelData = useMemo(
-    () => computePortLabels(alongRoutePorts, engineOpts),
-    [alongRoutePorts, engineOpts],
+  // Channel/strait labels — rendered in a separate TextLayer with
+  // italic styling and a slight rotation to align with the feature.
+  const channelLabelData = useMemo(
+    () => computeMapLabels(MAP_LABELS, { ...engineOpts, categories: ['channel'] }),
+    [engineOpts],
   )
+
+  const portLabelData = useMemo(() => {
+    const origin = originId ? (PORTS.find((p) => p.id === originId) ?? null) : null
+    const destination = destinationId ? (PORTS.find((p) => p.id === destinationId) ?? null) : null
+    return computeAllRoutePortLabels(
+      { origin, destination, waypoints: waypointPorts, transitPorts: alongRoutePorts },
+      engineOpts,
+    )
+  }, [originId, destinationId, waypointPorts, alongRoutePorts, engineOpts])
 
   const gridLineData = useMemo(
     () => computeGridLines(theme, currentZoom, gridSettings),
@@ -394,6 +449,12 @@ export default function MapCanvas() {
     if (Math.max(...lngs) - Math.min(...lngs) <= 180) return coords
     return coords.map(([lng, lat]): [number, number] => [lng < 0 ? lng + 360 : lng, lat])
   }, [route, isGlobe])
+
+  const routeDistanceLabels = useMemo(() => {
+    if (!route || datelineShiftedRoute.length < 2) return []
+    const totalNm = route.properties.length
+    return computeRouteDistanceLabels(datelineShiftedRoute, totalNm, isGlobe, theme)
+  }, [route, datelineShiftedRoute, isGlobe, theme])
 
   const traceCoords = useMemo<[number, number][]>(() => {
     if (!trace.active || trace.partialPath.length < 2) return []
@@ -761,19 +822,19 @@ export default function MapCanvas() {
       mapLabelData.length > 0 &&
         new TextLayer<(typeof mapLabelData)[number]>({
           id: 'country-labels',
-          data: mapLabelData.filter((d) => d.visible),
+          data: mapLabelData.filter((d) => d.visible && !d.rotation),
           getPosition: (d) => d.position,
           getText: (d) => d.text,
           getSize: (d) => d.size,
           getColor: (d) => d.color,
           getPixelOffset: [0, 0],
-          fontFamily: 'var(--font-family-ui), system-ui, sans-serif',
+          fontFamily: 'Inter, system-ui, sans-serif',
           fontWeight: labelPalette.countryFontWeight,
           fontSettings: { sdf: true, fontSize: 128, buffer: 16 },
           sizeUnits: 'pixels',
           sizeScale: 1,
-          sizeMinPixels: isGlobe ? 27 : 24,
-          sizeMaxPixels: isGlobe ? 54 : 48,
+          sizeMinPixels: isGlobe ? 8 : 7,
+          sizeMaxPixels: isGlobe ? 16 : 14,
           background: false,
           backgroundPadding: [4, 2],
           getBackgroundColor: [0, 0, 0, 0],
@@ -783,6 +844,49 @@ export default function MapCanvas() {
           getTextAnchor: 'middle',
           getAlignmentBaseline: 'center',
           pickable: false,
+          parameters: isGlobe ? {} : PORT_MARKER_PARAMS,
+        }),
+      // Channel leader lines — thin connectors from geographic
+      // anchor to the offset label position.
+      channelLabelData.filter((d) => d.leaderLine && d.visible).length > 0 &&
+        new PathLayer<(typeof channelLabelData)[number]>({
+          id: 'channel-leader-lines',
+          data: channelLabelData.filter((d) => d.leaderLine && d.visible),
+          getPath: (d) => [d.leaderLine!.from, d.leaderLine!.to],
+          getColor: (d) => d.leaderLine!.color,
+          getWidth: 1,
+          widthUnits: 'pixels',
+          capRounded: false,
+          jointRounded: false,
+          pickable: false,
+        }),
+      // Channel / strait labels — offset from geographic position
+      // with a leader line connecting to the feature. Lighter font
+      // weight and rotation to distinguish from port names.
+      channelLabelData.filter((d) => d.visible).length > 0 &&
+        new TextLayer<(typeof channelLabelData)[number]>({
+          id: 'channel-labels',
+          data: channelLabelData.filter((d) => d.visible),
+          getPosition: (d) => d.position,
+          getText: (d) => d.text,
+          getSize: (d) => d.size,
+          getColor: (d) => d.color,
+          getAngle: (d) => d.rotation ?? 0,
+          fontFamily: 'Inter, system-ui, sans-serif',
+          fontWeight: 300,
+          fontSettings: { sdf: true, fontSize: 128, buffer: 16 },
+          sizeUnits: 'pixels',
+          sizeScale: 1,
+          sizeMinPixels: isGlobe ? 7 : 6,
+          sizeMaxPixels: isGlobe ? 14 : 12,
+          background: false,
+          outlineWidth: 1.5,
+          outlineColor: labelPalette.globalOutline,
+          characterSet: 'auto',
+          getTextAnchor: 'start',
+          getAlignmentBaseline: 'center',
+          pickable: false,
+          parameters: isGlobe ? {} : PORT_MARKER_PARAMS,
         }),
       // The route is a single feature from searoute-ts.
       // `datelineShiftedRoute` is already normalised to [0, 360]
@@ -793,7 +897,7 @@ export default function MapCanvas() {
             id: 'route',
             data: [{ coords: datelineShiftedRoute }],
             getPath: (d) => d.coords,
-            getColor: getRouteLineColor,
+            getColor: () => getRouteLineColor(theme),
             getWidth: routeDisplaySettings.routeLineWidth,
             widthUnits: 'pixels',
             capRounded: true,
@@ -809,7 +913,7 @@ export default function MapCanvas() {
             id: 'route-trace',
             data: [{ coords: traceCoords }],
             getPath: (d) => d.coords,
-            getColor: ROUTE_TRACE_COLOR,
+            getColor: () => getRouteTraceColor(theme),
             getWidth: ROUTE_TRACE_WIDTH_PX,
             widthUnits: 'pixels',
             capRounded: true,
@@ -826,7 +930,7 @@ export default function MapCanvas() {
             getPosition: (d) => d.pos,
             getRadius: ROUTE_TRACE_HEAD_RADIUS_PX,
             getFillColor: ROUTE_TRACE_HEAD_COLOR,
-            getLineColor: ROUTE_TRACE_HEAD_RING,
+            getLineColor: getRouteTraceHeadRing(theme),
             getLineWidth: ROUTE_TRACE_HEAD_RING_WIDTH_PX,
             stroked: true,
             filled: true,
@@ -834,6 +938,35 @@ export default function MapCanvas() {
             lineWidthUnits: 'pixels',
             pickable: false,
             parameters: PORT_MARKER_PARAMS,
+          })
+        : null,
+      // Route distance labels — cumulative nm from origin
+      // placed at 25%, 50%, 75% along the route path.
+      showRouteLayer && routeDistanceLabels.length > 0
+        ? new TextLayer<(typeof routeDistanceLabels)[number]>({
+            id: 'route-distance-labels',
+            data: routeDistanceLabels,
+            getPosition: (d) => d.position,
+            getText: (d) => d.text,
+            getSize: (d) => d.size,
+            getColor: (d) => d.color,
+            fontFamily: ROUTE_LABEL_FONT,
+            fontWeight: 500,
+            fontSettings: { sdf: true, fontSize: 64, buffer: 8 },
+            sizeUnits: 'pixels',
+            sizeScale: 1,
+            sizeMinPixels: isGlobe ? 4 : 3,
+            sizeMaxPixels: isGlobe ? 6 : 5,
+            background: true,
+            backgroundPadding: [3, 2],
+            getBackgroundColor: getRouteLabelBg(theme),
+            outlineWidth: ROUTE_LABEL_OUTLINE_WIDTH,
+            outlineColor: getRouteLabelOutline(theme),
+            characterSet: 'auto',
+            getTextAnchor: 'middle',
+            getAlignmentBaseline: 'center',
+            pickable: false,
+            parameters: isGlobe ? {} : PORT_MARKER_PARAMS,
           })
         : null,
       new ScatterplotLayer<Port>({
@@ -880,7 +1013,7 @@ export default function MapCanvas() {
         getPosition: (d) => [d.port.lng, d.port.lat],
         getRadius: ROLE_RADIUS_PX,
         getFillColor: (d) => getRoleFill(d.role),
-        getLineColor: ROLE_RING,
+        getLineColor: getRoleRing(theme),
         getLineWidth: ROLE_RING_WIDTH_PX,
         stroked: true,
         filled: true,
@@ -899,7 +1032,7 @@ export default function MapCanvas() {
           getPosition: (d) => [d.lng, d.lat],
           getRadius: WAYPOINT_RADIUS_PX,
           getFillColor: WAYPOINT_FILL,
-          getLineColor: WAYPOINT_RING,
+          getLineColor: getWaypointRing(theme),
           getLineWidth: WAYPOINT_RING_WIDTH_PX,
           stroked: true,
           filled: true,
@@ -922,9 +1055,11 @@ export default function MapCanvas() {
           id: 'along-route-ports',
           data: alongRoutePorts,
           getPosition: (d) => [d.lng, d.lat],
-          getRadius: TRANSIT_PORT_RADIUS_PX,
-          getFillColor: TRANSIT_PORT_FILL,
-          getLineColor: TRANSIT_PORT_RING,
+          getRadius: (_d: Port, { index }: { index: number }) =>
+            index < transitBloomCount ? TRANSIT_PORT_RADIUS_PX : 0,
+          getFillColor: (_d: Port, { index }: { index: number }) =>
+            index < transitBloomCount ? getTransitFill(theme) : [0, 0, 0, 0],
+          getLineColor: getTransitRing(theme),
           getLineWidth: 1,
           stroked: true,
           filled: true,
@@ -956,21 +1091,25 @@ export default function MapCanvas() {
             getText: (d) => d.text,
             getSize: (d) => d.size,
             getColor: (d) => d.color,
-            getPixelOffset: [0, 12],
-            fontFamily: 'var(--font-family-ui), system-ui, sans-serif',
+            getPixelOffset: (d) => {
+              const base = d.defaultPixelOffset ?? [0, 12]
+              return [base[0] + (d.pixelOffset?.[0] ?? 0), base[1] + (d.pixelOffset?.[1] ?? 0)]
+            },
+            fontFamily: 'Inter, system-ui, sans-serif',
             fontWeight: labelPalette.portFontWeight,
             fontSettings: { sdf: true, fontSize: 128, buffer: 16 },
             sizeUnits: 'pixels',
             sizeScale: 1,
-            sizeMinPixels: isGlobe ? 33 : 30,
-            sizeMaxPixels: isGlobe ? 45 : 42,
+            sizeMinPixels: isGlobe ? 9 : 8,
+            sizeMaxPixels: isGlobe ? 14 : 12,
             background: false,
             outlineWidth: 2,
             outlineColor: labelPalette.globalOutline,
             characterSet: 'auto',
-            getTextAnchor: 'middle',
+            getTextAnchor: (d) => d.labelAnchor ?? 'middle',
             getAlignmentBaseline: 'top',
             pickable: false,
+            parameters: isGlobe ? {} : PORT_MARKER_PARAMS,
           })
         : null,
     ],
@@ -980,8 +1119,10 @@ export default function MapCanvas() {
       destinationId,
       rolePorts,
       alongRoutePorts,
+      transitBloomCount,
       visiblePorts,
       mapLabelData,
+      channelLabelData,
       portLabelData,
       gridLineData,
       isGlobe,
@@ -993,6 +1134,7 @@ export default function MapCanvas() {
       traceHead,
       traceCoords,
       datelineShiftedRoute,
+      routeDistanceLabels,
       mapLayerSettings,
       routeDisplaySettings,
       continentPalette.fill,
@@ -1003,6 +1145,7 @@ export default function MapCanvas() {
       labelPalette.globalOutline,
       labelPalette.portFontWeight,
       labelPalette.countryFontWeight,
+      theme,
       selectPort,
       setDestination,
       setOrigin,
@@ -1060,13 +1203,9 @@ export default function MapCanvas() {
     })
   }, [])
   // Auto-sync the basemap to the theme when the theme changes.
-  // Satellite is left alone — the user explicitly picked it, and
-  // satellite imagery works on both themes.
   useEffect(() => {
-    setBasemapId((b) => {
-      if (b === 'satellite') return b
-      return theme === 'light' ? 'light' : 'dark'
-    })
+    setBasemapId(theme === 'light' ? 'light' : 'dark')
+    setLaneTheme(theme)
   }, [theme])
   const onToggleView = useCallback(() => {
     setViewState((vs) => ({
@@ -1123,6 +1262,64 @@ export default function MapCanvas() {
     },
     [setViewingPort],
   )
+
+  // Idle auto-rotate: after 30s of inactivity on the globe,
+  // slowly drift the bearing to create a "screensaver" effect.
+  // Stops immediately on any pointer/keyboard/wheel interaction.
+  const idleTimerRef = useRef<number | null>(null)
+  const rotateRafRef = useRef<number | null>(null)
+  const lastInteractionRef = useRef(Date.now())
+
+  useEffect(() => {
+    if (!isGlobe) return
+
+    const prefersReduced =
+      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReduced) return
+
+    const IDLE_TIMEOUT_MS = 30000
+    const ROTATION_SPEED = 0.012 // degrees per frame (~0.72°/s at 60fps)
+
+    const resetIdle = () => {
+      lastInteractionRef.current = Date.now()
+      if (rotateRafRef.current !== null) {
+        cancelAnimationFrame(rotateRafRef.current)
+        rotateRafRef.current = null
+      }
+      if (idleTimerRef.current !== null) {
+        clearTimeout(idleTimerRef.current)
+        idleTimerRef.current = null
+      }
+      idleTimerRef.current = window.setTimeout(startRotation, IDLE_TIMEOUT_MS)
+    }
+
+    const startRotation = () => {
+      const tick = () => {
+        setViewState((vs) => ({
+          ...vs,
+          bearing: ((vs.bearing ?? 0) + ROTATION_SPEED) % 360,
+        }))
+        rotateRafRef.current = requestAnimationFrame(tick)
+      }
+      rotateRafRef.current = requestAnimationFrame(tick)
+    }
+
+    // Start the initial idle timer
+    idleTimerRef.current = window.setTimeout(startRotation, IDLE_TIMEOUT_MS)
+
+    const events = ['pointerdown', 'pointermove', 'wheel', 'keydown']
+    for (const evt of events) {
+      window.addEventListener(evt, resetIdle, { passive: true })
+    }
+
+    return () => {
+      if (idleTimerRef.current !== null) clearTimeout(idleTimerRef.current)
+      if (rotateRafRef.current !== null) cancelAnimationFrame(rotateRafRef.current)
+      for (const evt of events) {
+        window.removeEventListener(evt, resetIdle)
+      }
+    }
+  }, [isGlobe])
 
   // Currently-selected alternative and the full list will be
 

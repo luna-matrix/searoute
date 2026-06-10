@@ -4,11 +4,14 @@
   top: var(--space-4);
   bottom: var(--space-4);
   z-index: var(--z-panel-overlay);
-  width: 360px;
+  width: 400px;
   max-width: calc(100% - var(--space-4) * 2);
   display: flex;
   flex-direction: column;
   background-color: var(--color-glass-panel);
+  background-image:
+    repeating-linear-gradient(0deg, var(--color-chart-grid) 0 1px, transparent 1px 20px),
+    repeating-linear-gradient(90deg, var(--color-chart-grid) 0 1px, transparent 1px 20px);
   backdrop-filter: blur(var(--blur-glass)) saturate(140%);
   -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(140%);
   border: 1px solid var(--color-border-on-glass);
@@ -21,7 +24,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-4);
   border-bottom: 1px solid var(--color-border-on-glass);
 }
 
@@ -29,7 +32,7 @@
   font-family: var(--font-family-ui);
   font-size: var(--font-size-heading-2);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-arctic-white);
+  color: var(--color-sea-spray);
   letter-spacing: var(--letter-spacing-wide);
   text-transform: uppercase;
 }
@@ -53,11 +56,11 @@
 
 .closeButton:hover {
   background-color: var(--color-wet-ink-blue);
-  color: var(--color-arctic-white);
+  color: var(--color-sea-spray);
 }
 
 .body {
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-4);
   overflow-y: auto;
   overscroll-behavior: contain;
   display: flex;

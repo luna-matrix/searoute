@@ -132,7 +132,7 @@ export const useMapStore = create<MapStore>()(
       originId: 'panjang',
       destinationId: null,
       waypoints: [],
-      includeLongAlternatives: false,
+      includeLongAlternatives: true,
       viewingPortId: null,
       route: null,
       alternatives: [],

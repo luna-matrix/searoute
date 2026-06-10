@@ -92,6 +92,25 @@ export function getRoleFill(role: 'origin' | 'destination'): RGBA {
   return role === 'origin' ? ORIGIN_FILL : DESTINATION_FILL
 }
 
+/** Theme-aware ring colors. On dark backgrounds, arctic-white rings
+ *  pop cleanly. On light (parchment) backgrounds, dark rings are
+ *  needed for visibility — arctic-white is near-invisible on #f4ecd8. */
+export function getRoleRing(theme: ThemeMode): RGBA {
+  return theme === 'light' ? [26, 42, 58, 255] : [238, 242, 245, 255]
+}
+
+export function getWaypointRing(theme: ThemeMode): RGBA {
+  return theme === 'light' ? [26, 42, 58, 255] : [238, 242, 245, 255]
+}
+
+export function getTransitRing(theme: ThemeMode): RGBA {
+  return theme === 'light' ? [26, 42, 58, 200] : [238, 242, 245, 200]
+}
+
+export function getTransitFill(theme: ThemeMode): RGBA {
+  return theme === 'light' ? [179, 87, 0, 220] : [247, 127, 0, 200]
+}
+
 /** Waypoint marker styling (Phase 5). Admiralty-signal blue so it
  *  sits visually between the green origin and red destination
  *  markers without competing with either. Slightly smaller than
@@ -105,6 +124,4 @@ export const WAYPOINT_RING_WIDTH_PX = 1.5
  *  Major + Intermediate ports within 50 nm of the route.
  *  Smaller and less prominent than origin/destination/waypoints
  *  so they read as informational, not call-to-action. */
-export const TRANSIT_PORT_FILL: RGBA = [247, 127, 0, 200]
-export const TRANSIT_PORT_RING: RGBA = [238, 242, 245, 200]
 export const TRANSIT_PORT_RADIUS_PX = 3.5

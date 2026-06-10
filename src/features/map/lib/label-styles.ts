@@ -48,44 +48,44 @@ export interface LabelPalette {
 /* ------------------------------------------------------------------ */
 
 const DARK_LAND: CategoryStyle = {
-  color: [200, 214, 229, 160],
+  color: [200, 214, 229, 240],
   outlineColor: [6, 13, 23, 220],
-  fontSizePx: 42,
-  emphasisSize: { large: 54, normal: 42, small: 36, micro: 27 },
+  fontSizePx: 12,
+  emphasisSize: { large: 15, normal: 12, small: 10, micro: 8 },
   fontWeight: 500,
 }
 
 const DARK_WATER: CategoryStyle = {
-  color: [136, 153, 170, 120],
+  color: [136, 153, 170, 200],
   outlineColor: [6, 13, 23, 180],
-  fontSizePx: 39,
-  emphasisSize: { large: 48, normal: 39, small: 33, micro: 24 },
+  fontSizePx: 11,
+  emphasisSize: { large: 14, normal: 11, small: 9, micro: 7 },
   fontWeight: 400,
   fontStyle: 'italic',
 }
 
 const DARK_CHANNEL: CategoryStyle = {
-  color: [247, 127, 0, 100],
+  color: [247, 127, 0, 180],
   outlineColor: [6, 13, 23, 160],
-  fontSizePx: 33,
-  emphasisSize: { large: 39, normal: 33, small: 30, micro: 24 },
+  fontSizePx: 10,
+  emphasisSize: { large: 11, normal: 10, small: 8, micro: 7 },
   fontWeight: 500,
 }
 
 const DARK_FEATURE: CategoryStyle = {
-  color: [0, 78, 146, 90],
+  color: [0, 78, 146, 160],
   outlineColor: [6, 13, 23, 140],
-  fontSizePx: 30,
-  emphasisSize: { large: 36, normal: 30, small: 27, micro: 24 },
+  fontSizePx: 9,
+  emphasisSize: { large: 10, normal: 9, small: 8, micro: 7 },
   fontWeight: 400,
   fontStyle: 'italic',
 }
 
 const DARK_ISLAND: CategoryStyle = {
-  color: [200, 214, 229, 110],
+  color: [200, 214, 229, 190],
   outlineColor: [6, 13, 23, 180],
-  fontSizePx: 33,
-  emphasisSize: { large: 39, normal: 33, small: 30, micro: 24 },
+  fontSizePx: 10,
+  emphasisSize: { large: 11, normal: 10, small: 8, micro: 7 },
   fontWeight: 400,
 }
 
@@ -95,14 +95,14 @@ const DARK: LabelPalette = {
   channel: DARK_CHANNEL,
   feature: DARK_FEATURE,
   island: DARK_ISLAND,
-  globalOutline: [6, 13, 23, 200],
-  port: [238, 242, 245, 220],
-  portFontSizePx: 36,
+  globalOutline: [15, 30, 51, 180],
+  port: [238, 242, 245, 240],
+  portFontSizePx: 10,
   portFontWeight: 600,
-  countryFontSizePx: { large: 54, normal: 42, small: 36 },
+  countryFontSizePx: { large: 15, normal: 12, small: 10 },
   countryFontWeight: 500,
-  country: [200, 214, 229, 150],
-  countryOutline: [6, 13, 23, 220],
+  country: [200, 214, 229, 230],
+  countryOutline: [15, 30, 51, 200],
 }
 
 /* ------------------------------------------------------------------ */
@@ -110,44 +110,44 @@ const DARK: LabelPalette = {
 /* ------------------------------------------------------------------ */
 
 const LIGHT_LAND: CategoryStyle = {
-  color: [26, 42, 58, 170],
+  color: [26, 42, 58, 240],
   outlineColor: [255, 255, 255, 200],
-  fontSizePx: 42,
-  emphasisSize: { large: 54, normal: 42, small: 36, micro: 27 },
+  fontSizePx: 12,
+  emphasisSize: { large: 15, normal: 12, small: 10, micro: 8 },
   fontWeight: 500,
 }
 
 const LIGHT_WATER: CategoryStyle = {
-  color: [90, 100, 110, 140],
+  color: [90, 100, 110, 210],
   outlineColor: [255, 255, 255, 170],
-  fontSizePx: 39,
-  emphasisSize: { large: 48, normal: 39, small: 33, micro: 24 },
+  fontSizePx: 11,
+  emphasisSize: { large: 14, normal: 11, small: 9, micro: 7 },
   fontWeight: 400,
   fontStyle: 'italic',
 }
 
 const LIGHT_CHANNEL: CategoryStyle = {
-  color: [217, 110, 0, 110],
+  color: [217, 110, 0, 190],
   outlineColor: [255, 255, 255, 150],
-  fontSizePx: 33,
-  emphasisSize: { large: 39, normal: 33, small: 30, micro: 24 },
+  fontSizePx: 10,
+  emphasisSize: { large: 11, normal: 10, small: 8, micro: 7 },
   fontWeight: 500,
 }
 
 const LIGHT_FEATURE: CategoryStyle = {
-  color: [0, 78, 146, 100],
+  color: [0, 78, 146, 170],
   outlineColor: [255, 255, 255, 140],
-  fontSizePx: 30,
-  emphasisSize: { large: 36, normal: 30, small: 27, micro: 24 },
+  fontSizePx: 9,
+  emphasisSize: { large: 10, normal: 9, small: 8, micro: 7 },
   fontWeight: 400,
   fontStyle: 'italic',
 }
 
 const LIGHT_ISLAND: CategoryStyle = {
-  color: [26, 42, 58, 130],
+  color: [26, 42, 58, 200],
   outlineColor: [255, 255, 255, 170],
-  fontSizePx: 33,
-  emphasisSize: { large: 39, normal: 33, small: 30, micro: 24 },
+  fontSizePx: 10,
+  emphasisSize: { large: 11, normal: 10, small: 8, micro: 7 },
   fontWeight: 400,
 }
 
@@ -157,14 +157,14 @@ const LIGHT: LabelPalette = {
   channel: LIGHT_CHANNEL,
   feature: LIGHT_FEATURE,
   island: LIGHT_ISLAND,
-  globalOutline: [255, 255, 255, 200],
-  port: [26, 42, 58, 230],
-  portFontSizePx: 36,
+  globalOutline: [255, 255, 255, 180],
+  port: [26, 42, 58, 240],
+  portFontSizePx: 10,
   portFontWeight: 600,
-  countryFontSizePx: { large: 54, normal: 42, small: 36 },
+  countryFontSizePx: { large: 15, normal: 12, small: 10 },
   countryFontWeight: 500,
-  country: [26, 42, 58, 170],
-  countryOutline: [255, 255, 255, 200],
+  country: [26, 42, 58, 240],
+  countryOutline: [255, 255, 255, 180],
 }
 
 /* ------------------------------------------------------------------ */

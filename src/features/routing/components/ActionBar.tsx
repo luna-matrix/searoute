@@ -1,11 +1,14 @@
 import { useCallback, useState } from 'react'
-import { generateReport } from '../lib/voyage-report'
+import { generateReport, generateQuickSummary } from '../lib/voyage-report'
 import type { ReportInput } from '../lib/voyage-report'
+import Toast from '@/shared/components/Toast'
 import styles from './ActionBar.module.css'
 
 interface ActionBarProps {
   reportInput: ReportInput
 }
+
+type ReportMode = 'detailed' | 'summary'
 
 const ExportIcon = () => (
   <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
@@ -50,10 +53,17 @@ const CopyIcon = () => (
 )
 
 export default function ActionBar({ reportInput }: ActionBarProps) {
-  const [copied, setCopied] = useState(false)
+  const [toastVisible, setToastVisible] = useState(false)
+  const [reportMode, setReportMode] = useState<ReportMode>('detailed')
+
+  const getReport = useCallback(
+    () =>
+      reportMode === 'detailed' ? generateReport(reportInput) : generateQuickSummary(reportInput),
+    [reportInput, reportMode],
+  )
 
   const handleExport = useCallback(() => {
-    const text = generateReport(reportInput)
+    const text = getReport()
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -62,39 +72,61 @@ export default function ActionBar({ reportInput }: ActionBarProps) {
     a.download = `searoute-voyage-${ts}.txt`
     a.click()
     URL.revokeObjectURL(url)
-  }, [reportInput])
+  }, [getReport])
 
   const handleCopy = useCallback(async () => {
-    const text = generateReport(reportInput)
+    const text = getReport()
     try {
       await navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setToastVisible(true)
     } catch {
-      // clipboard unavailable — silently ignore
+      // clipboard unavailable
     }
-  }, [reportInput])
+  }, [getReport])
+
+  const dismissToast = useCallback(() => setToastVisible(false), [])
 
   return (
-    <div className={styles.bar}>
-      <button
-        type="button"
-        className={styles.button}
-        onClick={handleExport}
-        title="Download as TXT"
-      >
-        <ExportIcon />
-        <span>Export TXT</span>
-      </button>
-      <button
-        type="button"
-        className={styles.button}
-        onClick={handleCopy}
-        title="Copy to clipboard"
-      >
-        <CopyIcon />
-        <span>{copied ? 'Copied' : 'Copy'}</span>
-      </button>
-    </div>
+    <>
+      <div className={styles.bar}>
+        <div className={styles.modeBar}>
+          <button
+            type="button"
+            className={`${styles.modePill} ${reportMode === 'detailed' ? styles.modePillActive : ''}`}
+            onClick={() => setReportMode('detailed')}
+            aria-pressed={reportMode === 'detailed'}
+          >
+            Full Report
+          </button>
+          <button
+            type="button"
+            className={`${styles.modePill} ${reportMode === 'summary' ? styles.modePillActive : ''}`}
+            onClick={() => setReportMode('summary')}
+            aria-pressed={reportMode === 'summary'}
+          >
+            Summary
+          </button>
+        </div>
+        <button
+          type="button"
+          className={styles.button}
+          onClick={handleExport}
+          title="Download as TXT"
+        >
+          <ExportIcon />
+          <span>Export</span>
+        </button>
+        <button
+          type="button"
+          className={styles.button}
+          onClick={handleCopy}
+          title="Copy to clipboard"
+        >
+          <CopyIcon />
+          <span>Copy</span>
+        </button>
+      </div>
+      <Toast message="Copied to clipboard" visible={toastVisible} onDismiss={dismissToast} />
+    </>
   )
 }

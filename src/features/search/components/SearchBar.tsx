@@ -534,16 +534,18 @@ export default function SearchBar() {
         </div>
       )}
 
-      <div className={styles.addStopArea}>
-        <button
-          type="button"
-          className={styles.addStopButton}
-          onClick={onAddStopClick}
-          aria-label="Add a stop"
-        >
-          + Add stop
-        </button>
-      </div>
+      {originId && destinationId && (
+        <div className={styles.addStopArea}>
+          <button
+            type="button"
+            className={styles.addStopButton}
+            onClick={onAddStopClick}
+            aria-label="Add a stop"
+          >
+            + Add stop
+          </button>
+        </div>
+      )}
 
       {/* ---- Destination ---- */}
       {destinationPort && !destinationEditing ? (
@@ -652,7 +654,7 @@ export default function SearchBar() {
             {suggestedOrigins.length > 0 && (
               <>
                 <div className={styles.dropdownSectionLabel}>Suggested origins</div>
-                {suggestedOrigins.map((p) => {
+                {suggestedOrigins.map((p, i) => {
                   const isDisabled =
                     p.id === originId || p.id === destinationId || waypointIds.includes(p.id)
                   return (
@@ -662,6 +664,7 @@ export default function SearchBar() {
                       aria-selected={false}
                       aria-disabled={isDisabled}
                       className={`${styles.result} ${isDisabled ? styles.resultDisabled : ''}`}
+                      style={{ animationDelay: `${i * 30}ms` }}
                       onMouseDown={(e) => {
                         if (isDisabled) return
                         e.preventDefault()
@@ -691,7 +694,7 @@ export default function SearchBar() {
                 <div className={styles.dropdownSectionLabel}>
                   Common from {originPort?.name ?? 'your origin'}
                 </div>
-                {commonDestinations.map((p) => {
+                {commonDestinations.map((p, i) => {
                   const isDisabled =
                     p.id === originId || p.id === destinationId || waypointIds.includes(p.id)
                   return (
@@ -701,6 +704,7 @@ export default function SearchBar() {
                       aria-selected={false}
                       aria-disabled={isDisabled}
                       className={`${styles.result} ${isDisabled ? styles.resultDisabled : ''}`}
+                      style={{ animationDelay: `${i * 30}ms` }}
                       onMouseDown={(e) => {
                         if (isDisabled) return
                         e.preventDefault()
@@ -739,6 +743,7 @@ export default function SearchBar() {
                   className={`${styles.result} ${i === highlightIndex ? styles.resultHighlighted : ''} ${
                     isDisabled ? styles.resultDisabled : ''
                   }`}
+                  style={{ animationDelay: `${i * 30}ms` }}
                   onMouseDown={(e) => {
                     if (isDisabled) return
                     e.preventDefault()
